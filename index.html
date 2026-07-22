@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한글사냥꾼</title>
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+
+<div class="screen" id="start-screen">
+  <img class="bg" src="asset/image/Background_step1.png" alt="배경">
+
+  <div class="monster-wrap monster-wrap--tl">
+    <img class="monster" src="asset/image/ms_yg_fly.png" alt="야광귀">
+  </div>
+  <div class="monster-wrap monster-wrap--bl">
+    <img class="monster" src="asset/image/ms_gs_fly.png" alt="그슨대">
+  </div>
+  <div class="monster-wrap monster-wrap--tr">
+    <img class="monster" src="asset/image/ms_bs_fly.png" alt="불가살이">
+  </div>
+  <div class="monster-wrap monster-wrap--br">
+    <img class="monster" src="asset/image/ms_dk_fly.png" alt="도깨비">
+  </div>
+
+  <img class="logo-typo" src="asset/image/logo_typo.png" alt="한글사냥꾼">
+
+  <button class="start-button" id="start-button" type="button">
+    <img src="asset/image/button_gamestart.png" alt="게임 시작">
+  </button>
+</div>
+
+<div class="screen" id="character-screen" hidden>
+  <img class="bg" src="asset/image/Background_step1.png" alt="배경">
+
+  <img class="logo-typo logo-typo--small" src="asset/image/logo_typo.png" alt="한글사냥꾼">
+
+  <div class="char-card" id="char-boy" data-character="boy">
+    <img class="char-card__img" src="asset/image/cr_boy_box.png" alt="남자 사냥꾼">
+  </div>
+  <div class="char-card" id="char-girl" data-character="girl">
+    <img class="char-card__img" src="asset/image/cr_girl_box.png" alt="여자 사냥꾼">
+  </div>
+</div>
+
+<div class="screen" id="map-screen" data-back-target="start-screen" hidden>
+  <img class="bg" src="asset/image/Background_step3.png" alt="배경">
+
+  <button class="back-button" type="button">
+    <img src="asset/image/button_back.png" alt="뒤로가기">
+  </button>
+
+  <div class="stage-track" id="stage-track"></div>
+
+  <img class="map-character" id="map-character" alt="캐릭터" hidden>
+</div>
+
+<script src="shared/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Pretendard", "Malgun Gothic", sans-serif;
+}
+
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  aspect-ratio: 16 / 9;
+  max-height: 100vh;
+  max-width: 177.78vh; /* 16:9 based on viewport height */
+  margin: 0 auto;
+  overflow: hidden;
+  background: #000;
+}
+
+.bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* ---------- 중앙 로고 + 시작 버튼 ---------- */
+
+.logo-typo {
+  position: absolute;
+  top: 39%;
+  left: 50%;
+  width: 25%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.start-button {
+  position: absolute;
+  top: 71%;
+  left: 50%;
+  width: 30%;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 10;
+}
+
+.start-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.start-button:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.start-button:active {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* ---------- 요괴 캐릭터 ---------- */
+
+.monster-wrap {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.monster {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 야광귀 - 좌상단 */
+.monster-wrap--tl {
+  top: 22%;
+  left: 25.5%;
+  width: 11%;
+}
+.monster-wrap--tl .monster {
+  animation: float-a 4s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+/* 그슨대 - 좌하단 */
+.monster-wrap--bl {
+  top: 76%;
+  left: 18%;
+  width: 17%;
+}
+.monster-wrap--bl .monster {
+  animation: float-b 4.6s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+/* 불가살이 - 우상단 */
+.monster-wrap--tr {
+  top: 25%;
+  left: 80%;
+  width: 15%;
+}
+.monster-wrap--tr .monster {
+  animation: float-c 3.6s ease-in-out infinite;
+  animation-delay: 1.4s;
+}
+
+/* 도깨비 - 우하단 */
+.monster-wrap--br {
+  top: 76%;
+  left: 87.5%;
+  width: 12%;
+}
+.monster-wrap--br .monster {
+  animation: float-d 5s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+@keyframes float-a {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+
+@keyframes float-b {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes float-c {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes float-d {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-18px); }
+}
+
+/* ---------- 캐릭터 선택 화면 ---------- */
+
+.logo-typo--small {
+  top: 17%;
+  width: 12%;
+}
+
+.char-card {
+  position: absolute;
+  top: 59.5%;
+  width: 28%;
+  aspect-ratio: 539 / 605;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 4%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 0 solid #FDE88E;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-width 0.2s ease;
+  z-index: 10;
+}
+
+#char-boy {
+  left: 33%;
+}
+
+#char-girl {
+  left: 67%;
+}
+
+.char-card__img {
+  width: 88%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.char-card:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+.char-card.is-selected {
+  border-width: 17px;
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* ---------- 요괴맵 화면 ---------- */
+
+.back-button {
+  position: absolute;
+  top: 9.3%;
+  left: 5.7%;
+  width: 5.2%;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 20;
+}
+
+.back-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.back-button:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.back-button:active {
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
+.stage-wrap {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.stage-platform-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.15s ease;
+}
+
+.stage-wrap.is-select .stage-platform-img {
+  cursor: pointer;
+}
+
+.stage-wrap.is-select .stage-platform-img:hover {
+  transform: scale(1.06);
+}
+
+.stage-label {
+  position: absolute;
+  width: 10%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.stage-label img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.map-character {
+  position: absolute;
+  width: 13%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  pointer-events: none;
+  transition: left 0.3s ease, top 0.3s ease;
+}
+
+/* ---------- 반응형 (모바일) ---------- */
+
+@media (max-width: 768px) {
+  .logo-typo {
+    width: 34%;
+  }
+  .logo-typo--small {
+    width: 20%;
+  }
+  .start-button {
+    width: 38%;
+  }
+  .monster-wrap--tl {
+    width: 16%;
+  }
+  .monster-wrap--tr {
+    width: 20%;
+  }
+  .monster-wrap--bl {
+    width: 24%;
+  }
+  .monster-wrap--br {
+    width: 17%;
+  }
+  .char-card {
+    width: 36%;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-typo {
+    width: 40%;
+  }
+  .logo-typo--small {
+    width: 26%;
+  }
+  .start-button {
+    width: 46%;
+  }
+  .monster-wrap--tl {
+    width: 20%;
+  }
+  .monster-wrap--tr {
+    width: 25%;
+  }
+  .monster-wrap--bl {
+    width: 30%;
+  }
+  .monster-wrap--br {
+    width: 21%;
+  }
+  .char-card {
+    width: 42%;
+  }
+}
