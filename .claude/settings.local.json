@@ -5,7 +5,8 @@
       "Bash(node -e ' *)",
       "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"C:\\\\동채현 과제\\\\한글\\\\asset\\\\image\\\\1.startscreen.png\"\\); \"$\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\))",
       "Skill(run)",
-      "PowerShell(Get-Command *)"
+      "PowerShell(Get-Command *)",
+      "Skill(claude-in-chrome)"
     ]
   }
 }
