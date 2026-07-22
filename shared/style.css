@@ -420,17 +420,14 @@ html, body {
   pointer-events: none;
 }
 
-.jamo-piece.is-correct {
-  animation: jamo-pop 0.5s ease-out forwards;
-}
-
-/* 목업(4.game1, 4.game1-2) 실측 좌표(화면 대비 %) 기준 배치 */
-.jamo-1 { left: 24.35%; top: 37.92%; }
-.jamo-2 { left: 43.36%; top: 50.93%; }
-.jamo-3 { left: 62.03%; top: 48.01%; }
-.jamo-4 { left: 12.42%; top: 65.23%; }
-.jamo-5 { left: 66.04%; top: 75.83%; }
-.jamo-6 { left: 83.41%; top: 55.46%; }
+/* 목업(4.game1, 4.game1-2) 실측 좌표(화면 대비 %) 기준 배치.
+   조각마다 둥둥 뜨는 애니메이션의 duration/delay를 다르게 줘서 엇갈리게 움직인다. */
+.jamo-1 { left: 24.35%; top: 37.92%; animation: jamo-float 3.6s ease-in-out infinite; animation-delay: 0s; }
+.jamo-2 { left: 33%; top: 50.93%; animation: jamo-float 4.2s ease-in-out infinite; animation-delay: 0.5s; }
+.jamo-3 { left: 62.03%; top: 48.01%; animation: jamo-float 3.9s ease-in-out infinite; animation-delay: 0.9s; }
+.jamo-4 { left: 12.42%; top: 65.23%; animation: jamo-float 4.5s ease-in-out infinite; animation-delay: 0.3s; }
+.jamo-5 { left: 66.04%; top: 75.83%; animation: jamo-float 4s ease-in-out infinite; animation-delay: 1.2s; }
+.jamo-6 { left: 83.41%; top: 55.46%; animation: jamo-float 3.7s ease-in-out infinite; animation-delay: 0.7s; }
 
 .sparkle-burst {
   position: absolute;
@@ -444,49 +441,36 @@ html, body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 7vh;
-  height: 7vh;
-  margin: -3.5vh 0 0 -3.5vh;
+  width: 11vh;
+  height: 11vh;
+  margin: -5.5vh 0 0 -5.5vh;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, var(--burst-color, #ffe08a) 40%, rgba(255, 240, 150, 0) 72%);
   opacity: 0;
-  animation: sparkle-core-anim 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: sparkle-core-anim 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .sparkle-dot {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 1.6vh;
-  height: 1.6vh;
-  margin: -0.8vh 0 0 -0.8vh;
+  width: 2.2vh;
+  height: 2.2vh;
+  margin: -1.1vh 0 0 -1.1vh;
   border-radius: 50%;
   background: var(--dot-color, #fff);
-  box-shadow: 0 0 8px 2px var(--dot-color, #fff);
+  box-shadow: 0 0 10px 3px var(--dot-color, #fff);
   opacity: 0;
-  animation: sparkle-dot-anim 0.45s ease-out forwards;
+  animation: sparkle-dot-anim 0.26s ease-out forwards;
 }
 
 #game1-play-screen.is-shaking {
   animation: game1-shake 0.35s ease-in-out;
 }
 
-@keyframes jamo-pop {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-    filter: brightness(1);
-  }
-  40% {
-    transform: translate(-50%, -50%) scale(1.35);
-    opacity: 1;
-    filter: brightness(1.6) drop-shadow(0 0 18px #fff);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(0.2);
-    opacity: 0;
-    filter: brightness(1.6);
-  }
+@keyframes jamo-float {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-1.2vh); }
 }
 
 @keyframes sparkle-core-anim {
@@ -496,11 +480,11 @@ html, body {
   }
   35% {
     opacity: 1;
-    transform: scale(1.25);
+    transform: scale(1.35);
   }
   100% {
     opacity: 0;
-    transform: scale(2.3);
+    transform: scale(2.8);
   }
 }
 

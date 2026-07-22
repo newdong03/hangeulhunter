@@ -193,9 +193,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const game1Character = document.getElementById("game1-character");
   const jamoPieces = document.querySelectorAll(".jamo-piece");
-  const JIPSIN_LENGTH = jamoPieces.length; // 짚신 = 자모 6개
 
-  let jipsinProgress = 0; // 지금까지 맞춘 자모 개수 (다음에 눌러야 할 순번 = jipsinProgress + 1)
+  // '짚신'의 자모 순서. 2번째·5번째가 둘 다 'ㅣ'라서 game1_word2 / game1_word5
+  // 중 아직 안 쓴 조각을 아무거나 클릭해도 그 순번의 정답으로 인정된다.
+  const JIPSIN_LETTERS = ["ㅈ", "ㅣ", "ㅍ", "ㅅ", "ㅣ", "ㄴ"];
+  const JIPSIN_LENGTH = JIPSIN_LETTERS.length;
+
+  let jipsinProgress = 0; // 지금까지 맞춘 자모 개수 (다음에 필요한 글자 = JIPSIN_LETTERS[jipsinProgress])
   let faceResetTimer = null;
 
   function setCharacterFace(face) {
@@ -219,8 +223,9 @@ document.addEventListener("DOMContentLoaded", () => {
     game1PlayScreen.classList.remove("is-shaking");
 
     jamoPieces.forEach((piece) => {
-      piece.classList.remove("is-correct", "is-used");
+      piece.classList.remove("is-used");
       piece.style.visibility = "";
+      piece.getAnimations().forEach((anim) => anim.cancel()); // 진행 중이던 날아가기 애니메이션 정리
     });
 
     for (let order = 1; order <= JIPSIN_LENGTH; order++) {
@@ -247,10 +252,10 @@ document.addEventListener("DOMContentLoaded", () => {
     core.className = "sparkle-core";
     burst.appendChild(core);
 
-    const DOT_COUNT = 12;
+    const DOT_COUNT = 14;
     for (let i = 0; i < DOT_COUNT; i++) {
       const angle = (360 / DOT_COUNT) * i + (Math.random() * 18 - 9); // 살짝 흩뿌려 자연스럽게
-      const radius = 9 + Math.random() * 7; // vh 단위, 사방으로 퍼지는 거리
+      const radius = 13 + Math.random() * 9; // vh 단위, 사방으로 퍼지는 거리 (더 넓게)
       const rad = (angle * Math.PI) / 180;
 
       const dot = document.createElement("div");
@@ -264,7 +269,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     game1PlayScreen.appendChild(burst);
-    setTimeout(() => burst.remove(), 700);
+    setTimeout(() => burst.remove(), 400);
+  }
+
+  // 정답 조각이 파티클 이펙트 직후 해당 wordbox 위치로 짧게 날아가 들어가는 연출.
+  // 도착 타이밍에 맞춰 wordbox가 off -> on 이미지로 전환된다.
+  function flyPieceIntoBox(piece, box, slot) {
+    const pieceRect = piece.getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+
+    const dx = (boxRect.left + boxRect.width / 2) - (pieceRect.left + pieceRect.width / 2);
+    const dy = (boxRect.top + boxRect.height / 2) - (pieceRect.top + pieceRect.height / 2);
+
+    const flight = piece.animate(
+      [
+        { transform: "translate(-50%, -50%) translate(0px, 0px) scale(1)", offset: 0 },
+        { transform: `translate(-50%, -50%) translate(${dx * 0.4}px, ${dy * 0.4}px) scale(1.15)`, offset: 0.35 },
+        { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(0.15)`, offset: 1 },
+      ],
+      { duration: 230, easing: "cubic-bezier(0.45, 0, 0.8, 0.4)", fill: "forwards" }
+    );
+
+    flight.onfinish = () => {
+      box.src = `asset/image/game1_wordbox${slot}_on.png`;
+      box.classList.remove("is-filled");
+      void box.offsetWidth; // 리플로우시켜 완성 박스 애니메이션이 매번 재생되게 함
+      box.classList.add("is-filled");
+
+      piece.style.visibility = "hidden";
+    };
   }
 
   function flashCharacterFace(face) {
@@ -273,21 +306,20 @@ document.addEventListener("DOMContentLoaded", () => {
     faceResetTimer = setTimeout(() => setCharacterFace("basic"), 700);
   }
 
-  function handleCorrectJamo(piece, order) {
-    jipsinProgress = order;
+  const SPARKLE_TO_FLIGHT_DELAY = 80; // 파티클이 터지고 나서 자모가 날아가기 시작하기까지(ms)
 
-    piece.classList.add("is-used");
-    piece.classList.add("is-correct");
+  function handleCorrectJamo(piece) {
+    jipsinProgress += 1;
+    const slot = jipsinProgress; // 방금 채운 wordbox 순번
+    const order = Number(piece.dataset.order); // 조각 고유 색상 조회용
+    const box = document.getElementById(`wordbox-${slot}`);
+
+    piece.classList.add("is-used"); // 재클릭 방지 (파티클/비행 중 클릭 잠금)
     spawnSparkle(piece, order);
-    piece.addEventListener("animationend", () => {
-      piece.style.visibility = "hidden";
-    }, { once: true });
 
-    const box = document.getElementById(`wordbox-${order}`);
-    box.src = `asset/image/game1_wordbox${order}_on.png`;
-    box.classList.remove("is-filled");
-    void box.offsetWidth; // 리플로우시켜 완성 박스 애니메이션이 매번 재생되게 함
-    box.classList.add("is-filled");
+    setTimeout(() => {
+      flyPieceIntoBox(piece, box, slot);
+    }, SPARKLE_TO_FLIGHT_DELAY);
 
     flashCharacterFace("happy");
 
@@ -309,15 +341,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   jamoPieces.forEach((piece) => {
     piece.addEventListener("click", () => {
-      const order = Number(piece.dataset.order);
-      const isPiecesTurn = order === jipsinProgress + 1;
+      const neededLetter = JIPSIN_LETTERS[jipsinProgress];
+      const isMatchingLetter = piece.dataset.letter === neededLetter;
 
-      if (piece.classList.contains("is-used") || !isPiecesTurn) {
+      if (piece.classList.contains("is-used") || !isMatchingLetter) {
         handleWrongJamo();
         return;
       }
 
-      handleCorrectJamo(piece, order);
+      handleCorrectJamo(piece);
     });
   });
 
