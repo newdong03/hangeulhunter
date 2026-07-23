@@ -37,7 +37,7 @@ html, body {
 
 .logo-typo {
   position: absolute;
-  top: 39%;
+  top: 49%;
   left: 50%;
   width: 24%;
   height: auto;
@@ -47,7 +47,7 @@ html, body {
 
 .start-button {
   position: absolute;
-  top: 65%;
+  top: 75%;
   left: 50%;
   width: 19.2%;
   transform: translate(-50%, -50%);
@@ -252,18 +252,22 @@ html, body {
   transform: scale(1.06);
 }
 
+/* .stage-wrap의 자식으로 배치된다. left:50% + translateX(-50%)이므로 wrap이
+   세로로 어긋나 있어도(발판 top이 stage마다 달라도) 라벨은 항상 그 발판
+   바로 아래에서 가로 중심이 정확히 일치한다.
+   width는 wrap 폭(STAGE_WIDTH=14%) 기준 환산값 — 화면 대비 10%가 되도록
+   10 / 14 * 100 ≈ 71.43%로 계산했다. */
 .stage-label {
   position: absolute;
-  width: 10%;
-  transform: translate(-50%, -50%);
-  z-index: 5;
-  pointer-events: none;
-}
-
-.stage-label img {
-  width: 100%;
+  top: 100%;
+  left: 50%;
+  width: 71.43%;
   height: auto;
   display: block;
+  margin-top: 1.6vh;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
 }
 
 .map-character {
@@ -274,6 +278,46 @@ html, body {
   z-index: 6;
   pointer-events: none;
   transition: left 0.3s ease, top 0.3s ease;
+  animation: map-character-idle 2.6s ease-in-out infinite;
+}
+
+/* 숨 쉬듯 아주 살짝 위아래로. 점프 연출 중에는 Web Animations API 쪽이
+   transform을 직접 제어하므로 이 CSS 애니메이션은 자동으로 뒤로 밀렸다가
+   점프가 끝나면(=WAAPI 애니메이션이 cancel되면) 다시 자연스럽게 이어진다. */
+@keyframes map-character-idle {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-1vh); }
+}
+
+.firefly-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.firefly {
+  position: absolute;
+  width: 0.35vh;
+  height: 0.35vh;
+  border-radius: 50%;
+  background: #fff6c9;
+  box-shadow: 0 0 1.4vh 0.35vh rgba(255, 246, 201, 0.75);
+  opacity: 0;
+  animation-name: firefly-drift, firefly-twinkle;
+  animation-timing-function: ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+@keyframes firefly-drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(var(--drift-x), calc(var(--drift-y) * -1)); }
+}
+
+@keyframes firefly-twinkle {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.85; }
 }
 
 /* ---------- 야광귀 룰 설명 화면 ---------- */
@@ -514,6 +558,297 @@ html, body {
   40% { transform: translateX(8px); }
   60% { transform: translateX(-6px); }
   80% { transform: translateX(4px); }
+}
+
+/* ---------- 야광귀 클리어 스토리 1: 짚신 완성 ---------- */
+
+.story-converge-row {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  width: 32%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.story-converge-box {
+  width: 14%;
+  height: auto;
+  display: block;
+}
+
+#yagwanggwi-story1-screen.is-playing .story-converge-row {
+  animation: story1-converge 0.6s ease-in forwards;
+}
+
+.story1-zipsin {
+  position: absolute;
+  top: 54%;
+  left: 50%;
+  width: 20%;
+  height: auto;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+  z-index: 5;
+}
+
+#yagwanggwi-story1-screen.is-playing .story1-zipsin {
+  animation:
+    story1-zipsin-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s forwards,
+    story1-zipsin-glow 1.1s ease-out 0.95s forwards;
+}
+
+.story-talk1 {
+  position: absolute;
+  top: 13%;
+  left: 50%;
+  width: 20%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  z-index: 6;
+}
+
+#yagwanggwi-story1-screen.is-playing .story-talk1 {
+  animation: story-talk-in 0.4s ease-out 0.9s forwards;
+}
+
+@keyframes story1-converge {
+  0% {
+    top: 24%;
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    top: 54%;
+    transform: translateX(-50%) scale(0.1);
+    opacity: 0;
+  }
+}
+
+@keyframes story1-zipsin-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes story1-zipsin-glow {
+  0% { filter: drop-shadow(0 0 0 rgba(255, 224, 138, 0)); }
+  40% { filter: drop-shadow(0 0 3.6vh rgba(255, 224, 138, 0.95)); }
+  100% { filter: drop-shadow(0 0 1.4vh rgba(255, 224, 138, 0.55)); }
+}
+
+@keyframes story-talk-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+}
+
+/* ---------- 야광귀 클리어 스토리 2: 짚신을 야광귀에게 전달 ---------- */
+
+.story2-zipsin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 2vh rgba(255, 224, 138, 0.7));
+  z-index: 6;
+}
+
+#yagwanggwi-story2-screen.is-playing .story2-zipsin {
+  animation: story2-zipsin-deliver 0.7s ease-in-out 0.35s forwards;
+}
+
+/* 캐릭터와 말풍선의 공통 부모. 이 박스의 가로/세로 크기가 곧 캐릭터의
+   렌더링 크기와 정확히 같아지도록 aspect-ratio를 ms_yg_basic.png 원본
+   비율(310/420)로 고정했다 — 그래서 안쪽의 .story2-talk가 이 wrap을
+   기준으로 잡는 좌표가 곧 "캐릭터 기준 좌표"가 된다. */
+.yg-story-char-wrap {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 18%;
+  aspect-ratio: 310 / 420;
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0;
+  z-index: 5;
+}
+
+#yagwanggwi-story2-screen.is-playing .yg-story-char-wrap {
+  animation: story2-character-in 0.5s ease-out forwards;
+}
+
+.story2-character {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 4.story2.png 목업에서 캐릭터/말풍선 픽셀 좌표를 실측해 캐릭터 박스
+   기준 상대값으로 환산했다: 말풍선 우측 끝이 캐릭터 좌측 끝에서
+   1920x1080 기준 약 6.9px(캐릭터 폭의 약 2%)만큼만 떨어지도록 배치. */
+.story2-talk {
+  position: absolute;
+  top: -14%;
+  left: -92%;
+  width: 90%;
+  height: auto;
+  opacity: 0;
+  z-index: 7;
+}
+
+#yagwanggwi-story2-screen.is-playing .story2-talk {
+  animation: story2-talk-in 0.4s ease-out 1s forwards;
+}
+
+@keyframes story2-talk-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes story2-zipsin-deliver {
+  0% {
+    top: 50%;
+    width: 20%;
+  }
+  100% {
+    top: 76%;
+    width: 15%;
+  }
+}
+
+@keyframes story2-character-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ---------- 야광귀 클리어 스토리 3: 아래아 카드 획득 ---------- */
+
+.story3-title {
+  position: absolute;
+  top: 11%;
+  left: 50%;
+  width: 34%;
+  height: auto;
+  transform: translateX(-50%);
+  opacity: 0;
+  z-index: 5;
+}
+
+#yagwanggwi-story3-screen.is-playing .story3-title {
+  animation: rule-fade-in 0.5s ease-out forwards;
+}
+
+.story3-card {
+  position: absolute;
+  top: 130%;
+  left: 50%;
+  width: 16%;
+  aspect-ratio: 294 / 467;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  perspective: 1400px;
+  z-index: 5;
+  transition: transform 0.15s ease;
+}
+
+.story3-card.is-settled {
+  top: 55%;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.story3-card.is-settled:hover {
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+.story3-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  transition: transform 0.5s ease;
+}
+
+.story3-card.is-flipped .story3-card__inner {
+  transform: rotateY(180deg);
+}
+
+.story3-card__face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  backface-visibility: hidden;
+  border-radius: 6%;
+}
+
+.story3-card__face--back {
+  transform: rotateY(180deg);
+}
+
+.story3-next-button {
+  position: absolute;
+  top: 88%;
+  left: 50%;
+  width: 12.5%;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+  transition: transform 0.15s ease;
+  z-index: 10;
+}
+
+#yagwanggwi-story3-screen.is-playing .story3-next-button {
+  animation: rule-fade-in 0.4s ease-out 1.4s forwards;
+}
+
+.story3-next-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.story3-next-button:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.story3-next-button:active {
+  transform: translate(-50%, -50%) scale(0.94);
 }
 
 /* ---------- 반응형 (모바일) ---------- */

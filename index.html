@@ -47,6 +47,8 @@
 <div class="screen" id="map-screen" data-back-target="start-screen" hidden>
   <img class="bg" src="asset/image/Background_step3.png" alt="배경">
 
+  <div class="firefly-layer" id="firefly-layer"></div>
+
   <button class="back-button" type="button">
     <img src="asset/image/button_back.png" alt="뒤로가기">
   </button>
@@ -100,6 +102,51 @@
   <img class="jamo-piece jamo-6" data-order="6" data-letter="ㄴ" src="asset/image/game1_word6.png" alt="자모 ㄴ">
 
   <img class="rule-character" id="game1-character" src="asset/image/ms_yg_basic.png" alt="야광귀">
+</div>
+
+<div class="screen" id="yagwanggwi-story1-screen" hidden>
+  <img class="bg" src="asset/image/Background_step4.png" alt="배경">
+
+  <div class="story-converge-row" id="story-converge-row">
+    <img class="story-converge-box" src="asset/image/game1_wordbox1_on.png" alt="">
+    <img class="story-converge-box" src="asset/image/game1_wordbox2_on.png" alt="">
+    <img class="story-converge-box" src="asset/image/game1_wordbox3_on.png" alt="">
+    <img class="story-converge-box" src="asset/image/game1_wordbox4_on.png" alt="">
+    <img class="story-converge-box" src="asset/image/game1_wordbox5_on.png" alt="">
+    <img class="story-converge-box" src="asset/image/game1_wordbox6_on.png" alt="">
+  </div>
+
+  <img class="story1-zipsin" src="asset/image/zipsin.png" alt="짚신">
+
+  <img class="story-talk1" src="asset/image/ygstory_talk1.png" alt="'짚신' 완성!">
+</div>
+
+<div class="screen" id="yagwanggwi-story2-screen" hidden>
+  <img class="bg" src="asset/image/Background_step4.png" alt="배경">
+
+  <img class="story2-zipsin" src="asset/image/zipsin.png" alt="짚신">
+
+  <div class="yg-story-char-wrap" id="yg-story-char-wrap">
+    <img class="story2-character" src="asset/image/ms_yg_basic.png" alt="야광귀">
+    <img class="story2-talk" src="asset/image/talk_yg_story.png" alt="고마워! '아래아'를 돌려줄게">
+  </div>
+</div>
+
+<div class="screen" id="yagwanggwi-story3-screen" hidden>
+  <img class="bg" src="asset/image/Background_step4.png" alt="배경">
+
+  <img class="story3-title" src="asset/image/ygstory_talk2.png" alt="'아래아' 카드를 획득했다">
+
+  <div class="story3-card" id="story3-card">
+    <div class="story3-card__inner" id="story3-card-inner">
+      <img class="story3-card__face story3-card__face--front" src="asset/image/card_1_front.png" alt="아래아 카드 앞면">
+      <img class="story3-card__face story3-card__face--back" src="asset/image/card_1_back.png" alt="아래아 카드 뒷면">
+    </div>
+  </div>
+
+  <button class="story3-next-button" id="story3-next-button" type="button">
+    <img src="asset/image/button_next.png" alt="다음">
+  </button>
 </div>
 
 <script src="shared/main.js"></script>
