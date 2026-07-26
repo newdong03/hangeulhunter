@@ -411,6 +411,408 @@ html, body {
   to { opacity: 1; }
 }
 
+/* ---------- 그슨대 룰 설명 화면 ---------- */
+
+/* 캐릭터와 말풍선의 공통 부모. 야광귀 룰 화면에서는 말풍선(.rule-talk)이
+   캐릭터와 별개로 화면 기준 절대 좌표를 가져서, 화면 비율이 달라지면
+   말풍선이 캐릭터 옆에서 어긋나는 문제가 있었다. 여기서는 말풍선을 이
+   wrap의 자식으로 넣고 wrap 기준 상대 좌표(%)로 배치해 항상 캐릭터
+   옆에 붙어 있도록 한다. wrap 자체 높이는 지정하지 않고 캐릭터 이미지의
+   렌더링 높이에 맞춰 자연스럽게 정해지게 둔다(5.game2-0.png 시안 실측
+   좌표 기준 배치, 화면 보며 미세 조정 가능). */
+.gs-rule-char-wrap {
+  position: absolute;
+  bottom: 9.3%;
+  left: 50%;
+  width: 21.4%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.gs-rule-character {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.gs-rule-talk {
+  position: absolute;
+  top: -34%;
+  left: -83%;
+  width: 88%;
+  height: auto;
+  z-index: 6;
+  opacity: 0;
+}
+
+#game2-rule-screen.is-playing .gs-rule-talk {
+  animation: rule-talk-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+
+#game2-rule-screen.is-playing .rule-mission {
+  animation: rule-fade-in 0.7s ease-out 0.25s forwards;
+}
+
+#game2-rule-screen.is-playing .rule-challenge-button {
+  animation: rule-fade-in 0.4s ease-out 1s forwards;
+}
+
+/* ---------- 불가살이 룰 설명 화면 ---------- */
+
+/* 캐릭터와 말풍선의 공통 부모. 그슨대 룰 화면과 동일한 패턴 — 말풍선을
+   wrap의 자식으로 넣고 wrap 기준 상대 좌표(%)로 배치해 항상 캐릭터
+   왼쪽에 붙어 있도록 한다(5.game3_0.png 시안 실측 좌표 기준 배치,
+   화면 보며 미세 조정 가능). */
+/* mission_game3.png는 다른 두 룰 화면의 미션 이미지보다 텍스트 주변
+   여백이 많아서 공용 .rule-mission 크기(30.3%) 그대로 두면 유독 작아
+   보인다. 다른 룰 화면(야광귀/그슨대)에는 영향 없이 이 화면에서만
+   키우기 위해 화면 ID로 스코프해서 덮어쓴다. */
+#game3-rule-screen .rule-mission {
+  width: 44%;
+}
+
+.bs-rule-char-wrap {
+  position: absolute;
+  bottom: 7.4%;
+  left: 50%;
+  width: 19.3%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.bs-rule-character {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bs-rule-talk {
+  position: absolute;
+  top: -36%;
+  left: -112%;
+  width: 92%;
+  height: auto;
+  z-index: 6;
+  opacity: 0;
+}
+
+#game3-rule-screen.is-playing .bs-rule-talk {
+  animation: rule-talk-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+
+#game3-rule-screen.is-playing .rule-mission {
+  animation: rule-fade-in 0.7s ease-out 0.25s forwards;
+}
+
+#game3-rule-screen.is-playing .rule-challenge-button {
+  animation: rule-fade-in 0.4s ease-out 1s forwards;
+}
+
+/* ---------- 불가살이 실제 게임 화면 (쇠 받기) ---------- */
+
+.game3-mission {
+  position: absolute;
+  top: 6%;
+  left: 50%;
+  width: 39%;
+  height: auto;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.game3-count {
+  position: absolute;
+  bottom: 6%;
+  left: 4%;
+  min-width: 15%;
+  padding: 2vh 2.2vw;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.6vh;
+  text-align: center;
+  z-index: 6;
+  box-shadow: 0 0.6vh 1.4vh rgba(0, 0, 0, 0.25);
+}
+
+.game3-count__label {
+  display: block;
+  font-size: 2vh;
+  color: #5b6b8c;
+  font-weight: 600;
+}
+
+.game3-count__value {
+  display: block;
+  font-size: 3.8vh;
+  color: #2f5fd6;
+  font-weight: 800;
+  margin-top: 0.5vh;
+}
+
+.game3-count.is-updated .game3-count__value {
+  animation: wordbox-pop 0.4s ease;
+}
+
+/* 바구니는 ms_bs_game_happy/sad.png 이미지 자체에 이미 그려져 있어서
+   별도 요소 없이 캐릭터 이미지 하나로 처리한다. 캐릭터를 좌우로 옮기는 건
+   순수 JS(main.js의 stepGame3)가 매 프레임 left(%)를 갱신하는 방식이고,
+   CSS transition은 걸지 않는다 — rAF로 이미 매끄럽게 갱신되는 값에
+   transition까지 걸면 오히려 한 프레임씩 밀려 보이는 지연이 생긴다. */
+.game3-character {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  width: 11%;
+  height: auto;
+  z-index: 5;
+}
+
+.game3-drop-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* 아이템은 <img>를 wrap(div)으로 한 겹 감싼 구조다 — ::before/::after는
+   <img> 같은 대체 요소에는 렌더링되지 않는 브라우저가 많아서, 트레일은
+   wrap에 걸고 실제 그림(글씨)에는 어떤 filter/glow도 걸지 않는다. 그래야
+   글씨가 항상 선명하게 보이면서, 지나온 경로 위쪽에는 옅어지는 잔상만
+   남는다. img에 position:relative + z-index:1을 줘서 트레일(z-index:-1)
+   보다 항상 위에 그려지도록 명시적으로 고정했다(static 요소와 음수
+   z-index 자식 사이의 페인트 순서에 기대지 않는다). */
+.game3-drop-item-wrap {
+  position: absolute;
+  width: 6%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0; /* 트레일의 z-index: -1이 이 래퍼 안에서만 뒤로 가도록 로컬 스택 컨텍스트를 만든다 */
+}
+
+/* game3_steel.png는 아이콘 주변 여백이 많아 fire와 같은 폭이면 훨씬
+   작아 보여서, steel 쪽만 폭을 키워 둘의 시각적 크기를 맞췄다. */
+.game3-drop-item-wrap--steel {
+  width: 8%;
+}
+
+.game3-drop-item-wrap--fire {
+  width: 6%;
+}
+
+.game3-drop-item {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+/* 트레일은 ::before(넓고 많이 흐림) + ::after(좁고 덜 흐림) 두 겹을
+   겹쳐 하나의 딱딱한 직선 그라데이션 대신 부드럽게 번지는 형태로 만든다.
+   둘 다 아이템 바로 위(지나온 경로)에서 시작해 타원형으로 옅어진다. */
+.game3-drop-item-wrap::before,
+.game3-drop-item-wrap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 35%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.game3-drop-item-wrap::before {
+  width: 90%;
+  height: 240%;
+  filter: blur(3px);
+}
+
+.game3-drop-item-wrap::after {
+  width: 55%;
+  height: 160%;
+  filter: blur(1.5px);
+}
+
+.game3-drop-item-wrap--steel::before {
+  background: radial-gradient(ellipse at 50% 100%, rgba(225, 235, 250, 0.4) 0%, rgba(225, 235, 250, 0) 72%);
+}
+
+.game3-drop-item-wrap--steel::after {
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+.game3-drop-item-wrap--fire::before {
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 140, 40, 0.4) 0%, rgba(255, 140, 40, 0) 72%);
+}
+
+.game3-drop-item-wrap--fire::after {
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 200, 70, 0.5) 0%, rgba(255, 200, 70, 0) 70%);
+}
+
+.game3-drop-item-wrap.is-caught {
+  animation: game3-catch-pop 0.3s ease forwards;
+}
+
+/* 낙하 중 은은하게 튀는 잔불꽃/파편 파티클 (main.js가 주기적으로 생성) */
+.game3-trail-particle {
+  position: absolute;
+  width: 0.55vh;
+  height: 0.55vh;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3;
+  animation: game3-trail-particle-fade 0.55s ease-out forwards;
+}
+
+.game3-trail-particle--steel {
+  background: rgba(230, 240, 255, 0.9);
+  box-shadow: 0 0 0.6vh rgba(220, 235, 255, 0.6);
+}
+
+.game3-trail-particle--fire {
+  background: rgba(255, 160, 60, 0.9);
+  box-shadow: 0 0 0.6vh rgba(255, 130, 40, 0.6);
+}
+
+@keyframes game3-trail-particle-fade {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(1.6vh) scale(0.3);
+  }
+}
+
+@keyframes game3-catch-pop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.7);
+  }
+}
+
+#game3-play-screen.is-shaking {
+  animation: game1-shake 0.35s ease-in-out;
+}
+
+/* 불을 담았을 때 화면이 붉게 물들었다가 돌아오는 연출. .screen이 이미
+   position:relative + overflow:hidden이라 ::after inset:0만으로 화면
+   전체를 덮는 오버레이가 된다. */
+#game3-play-screen.is-fire-hit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(220, 40, 30, 0.4);
+  z-index: 12;
+  pointer-events: none;
+  animation: game3-fire-flash 0.5s ease-out forwards;
+}
+
+@keyframes game3-fire-flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------- 그슨대 실제 게임 화면 (숨은그림찾기 + 손전등) ---------- */
+
+.game2-mission {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  width: 30%;
+  height: auto;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.game2-mission.is-hidden {
+  opacity: 0;
+}
+
+.game2-mission-find {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  width: 7%;
+  height: auto;
+  transform: translateX(-50%) translateY(-16px);
+  z-index: 6;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.game2-mission-find.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 손전등 연출: 밝은 배경(Background_step5_bright.png, z:0) 위에 어두운
+   배경(Background_step5.png)을 통째로 덮어(.game2-dark-overlay) 평소엔
+   화면 전체가 어두워 보이게 한다. 이 어두운 레이어에 radial-gradient
+   mask를 씌워 커서 주변 원형만 투명하게(=밝은 배경이 비쳐 보이게) 뚫는다.
+   커서 좌표(--x, --y)와 반경(--radius)은 game2PlayScreen의 mousemove
+   핸들러가 매 프레임 갱신한다. */
+.game2-dark-overlay {
+  z-index: 1;
+  mask-image: radial-gradient(
+    circle var(--radius, 0px) at var(--x, 50%) var(--y, 50%),
+    transparent 0%,
+    transparent 70%,
+    black 90%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle var(--radius, 0px) at var(--x, 50%) var(--y, 50%),
+    transparent 0%,
+    transparent 70%,
+    black 90%
+  );
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+/* 가짜 세모/그슨대는 두 배경 레이어보다 위(z-index 2)에 항상 그 자리에
+   있다 — 어두운 레이어에 가려 흐릿하게 보이다가, 손전등 마스크가 그
+   위치를 뚫고 지나갈 때 밝은 배경과 함께 또렷하게 드러난다. */
+.game2-hidden-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.game2-hidden-obj {
+  position: absolute;
+  height: auto;
+  transform: translate(-50%, -50%);
+  transition: transform 0.25s ease, filter 0.25s ease;
+  pointer-events: none;
+}
+
+.game2-hidden-obj.is-lit {
+  transform: translate(-50%, -50%) scale(1.05);
+  filter: drop-shadow(0 0 1.4vh rgba(255, 248, 210, 0.6)) brightness(1.08);
+}
+
+.game2-hidden-obj.is-fleeing {
+  animation: game2-gs-flee 0.9s ease-in forwards;
+}
+
+@keyframes game2-gs-flee {
+  0% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translateY(-6vh) scale(0.7); opacity: 0; }
+}
+
 /* ---------- 야광귀 실제 게임 화면 ---------- */
 
 .game1-mission {
@@ -849,6 +1251,73 @@ html, body {
 
 .story3-next-button:active {
   transform: translate(-50%, -50%) scale(0.94);
+}
+
+/* ---------- 그슨대 클리어 스토리 1: 도망친 그슨대의 약속 ---------- */
+
+/* 캐릭터와 말풍선의 공통 부모. 야광귀 스토리(.yg-story-char-wrap)와 같은
+   패턴 — 말풍선을 화면 기준이 아니라 이 wrap의 자식으로 넣어 상대 좌표로
+   붙인다. wrap 자체 높이는 지정하지 않고 캐릭터 이미지의 렌더링 높이에
+   맞춰 자연스럽게 정해지게 둔다. */
+.game2-story1-char-wrap {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  width: 22%;
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0;
+  z-index: 5;
+}
+
+#game2-story1-screen.is-playing .game2-story1-char-wrap {
+  animation: story2-character-in 0.5s ease-out forwards;
+}
+
+.game2-story1-character {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.game2-story1-talk {
+  position: absolute;
+  top: 8%;
+  left: -78%;
+  width: 74%;
+  height: auto;
+  transform: translateY(20px);
+  opacity: 0;
+  z-index: 7;
+}
+
+/* 그슨대가 2초간 멈춰서 보이다가 말풍선이 뜬다(animation-delay: 2s). */
+#game2-story1-screen.is-playing .game2-story1-talk {
+  animation: game2-story1-talk-in 0.4s ease-out 2s forwards;
+}
+
+@keyframes game2-story1-talk-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- 그슨대 클리어 스토리 2: '반시옷' 카드 획득 ----------
+   카드/타이틀/다음 버튼은 야광귀 스토리3의 .story3-title / .story3-card /
+   .story3-next-button 클래스를 그대로 재사용하고, 화면 ID로 스코프한
+   is-playing 트리거만 새로 추가한다(카드 진입 애니메이션은 main.js의
+   playClearCardEntrance()가 공용으로 재생한다). */
+
+#game2-story2-screen.is-playing .story3-title {
+  animation: rule-fade-in 0.5s ease-out forwards;
+}
+
+#game2-story2-screen.is-playing .story3-next-button {
+  animation: rule-fade-in 0.4s ease-out 1.4s forwards;
 }
 
 /* ---------- 반응형 (모바일) ---------- */

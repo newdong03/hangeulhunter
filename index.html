@@ -76,6 +76,79 @@
   </button>
 </div>
 
+<div class="screen" id="game2-rule-screen" data-back-target="map-screen" hidden>
+  <img class="bg" src="asset/image/Background_step5.png" alt="배경">
+
+  <button class="back-button" type="button">
+    <img src="asset/image/button_back.png" alt="뒤로가기">
+  </button>
+
+  <img class="rule-mission" src="asset/image/mission_game2.png" alt="미션 설명">
+
+  <div class="gs-rule-char-wrap">
+    <img class="gs-rule-character" src="asset/image/ms_gs_basic.png" alt="그슨대">
+    <img class="gs-rule-talk" src="asset/image/talk_gs.png" alt="그슨대 대사">
+  </div>
+
+  <button class="rule-challenge-button" id="game2-challenge-button" type="button">
+    <img src="asset/image/button_dojun.png" alt="도전">
+  </button>
+</div>
+
+<div class="screen" id="game3-rule-screen" data-back-target="map-screen" hidden>
+  <img class="bg" src="asset/image/Background_step6.png" alt="배경">
+
+  <button class="back-button" type="button">
+    <img src="asset/image/button_back.png" alt="뒤로가기">
+  </button>
+
+  <img class="rule-mission" src="asset/image/mission_game3.png" alt="미션 설명">
+
+  <div class="bs-rule-char-wrap">
+    <img class="bs-rule-character" src="asset/image/ms_bs_basic.png" alt="불가살이">
+    <img class="bs-rule-talk" src="asset/image/talk_bs.png" alt="불가살이 대사">
+  </div>
+
+  <button class="rule-challenge-button" id="game3-challenge-button" type="button">
+    <img src="asset/image/button_dojun.png" alt="도전">
+  </button>
+</div>
+
+<div class="screen" id="game3-play-screen" data-back-target="map-screen" hidden>
+  <img class="bg" src="asset/image/Background_step6.png" alt="배경">
+
+  <button class="back-button" type="button">
+    <img src="asset/image/button_back.png" alt="뒤로가기">
+  </button>
+
+  <img class="game3-mission" src="asset/image/mission_game3_main.png" alt="불을 피해 쇠를 3개 모아줘! 쇠를 좋아하는 불가살이를 위해 쇠로 만들어진 단어를 모아주세요.">
+
+  <div class="game3-count" id="game3-count">
+    <span class="game3-count__label">남은 수량</span>
+    <span class="game3-count__value" id="game3-count-value">0/3</span>
+  </div>
+
+  <div class="game3-drop-layer" id="game3-drop-layer"></div>
+
+  <img class="game3-character" id="game3-character" src="asset/image/ms_bs_game_happy.png" alt="불가살이">
+</div>
+
+<div class="screen" id="game2-play-screen" data-back-target="map-screen" hidden>
+  <img class="bg" src="asset/image/Background_step5_bright.png" alt="배경(밝음)">
+
+  <img class="bg game2-dark-overlay" id="game2-dark-overlay" src="asset/image/Background_step5.png" alt="배경(어둠)">
+
+  <div class="game2-hidden-layer" id="game2-hidden-layer"></div>
+
+  <button class="back-button" type="button">
+    <img src="asset/image/button_back.png" alt="뒤로가기">
+  </button>
+
+  <img class="game2-mission" id="game2-mission" src="asset/image/mission_game2_main.png" alt="숨은 그슨대를 찾아줘! 손전등을 비춰 유사한 물체들 사이 숨은 그슨대를 찾아주세요.">
+
+  <img class="game2-mission-find" id="game2-mission-find" src="asset/image/mission_game2_find.png" alt="찾았다!">
+</div>
+
 <div class="screen" id="game1-play-screen" data-back-target="map-screen" hidden>
   <img class="bg" src="asset/image/Background_step4.png" alt="배경">
 
@@ -145,6 +218,32 @@
   </div>
 
   <button class="story3-next-button" id="story3-next-button" type="button">
+    <img src="asset/image/button_next.png" alt="다음">
+  </button>
+</div>
+
+<div class="screen" id="game2-story1-screen" hidden>
+  <img class="bg" src="asset/image/Background_step5.png" alt="배경">
+
+  <div class="game2-story1-char-wrap" id="game2-story1-char-wrap">
+    <img class="game2-story1-character" src="asset/image/game2_hidgs_4.png" alt="그슨대">
+    <img class="game2-story1-talk" src="asset/image/talk_gs_story.png" alt="약속대로 '반시옷'을 돌려줄게">
+  </div>
+</div>
+
+<div class="screen" id="game2-story2-screen" hidden>
+  <img class="bg" src="asset/image/Background_step5.png" alt="배경">
+
+  <img class="story3-title" src="asset/image/gsstory_talk2.png" alt="'반시옷' 카드를 획득했다">
+
+  <div class="story3-card" id="game2-story-card">
+    <div class="story3-card__inner" id="game2-story-card-inner">
+      <img class="story3-card__face story3-card__face--front" src="asset/image/card_2_front.png" alt="반시옷 카드 앞면">
+      <img class="story3-card__face story3-card__face--back" src="asset/image/card_2_back.png" alt="반시옷 카드 뒷면">
+    </div>
+  </div>
+
+  <button class="story3-next-button" id="game2-story-next-button" type="button">
     <img src="asset/image/button_next.png" alt="다음">
   </button>
 </div>
