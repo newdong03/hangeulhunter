@@ -15,6 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const game3RuleScreen = document.getElementById("game3-rule-screen");
   const game3ChallengeButton = document.getElementById("game3-challenge-button");
   const game3PlayScreen = document.getElementById("game3-play-screen");
+  const game4RuleScreen = document.getElementById("game4-rule-screen");
+  const game4ChallengeButton = document.getElementById("game4-challenge-button");
+  const game4PlayScreen = document.getElementById("game4-play-screen");
+  const game4QuizAButton = document.getElementById("game4-quiz-a");
+  const game4QuizBButton = document.getElementById("game4-quiz-b");
   const game3Character = document.getElementById("game3-character");
   const game3DropLayer = document.getElementById("game3-drop-layer");
   const game3CountBox = document.getElementById("game3-count");
@@ -44,17 +49,89 @@ document.addEventListener("DOMContentLoaded", () => {
     playEntryAnimation(screen);
   }
 
-  // ---------- 화면 공통: 뒤로가기 버튼 ----------
-  // 각 화면(.screen)의 data-back-target 속성이 가리키는 화면으로 돌아간다.
-  // 스테이지 게임 화면들도 같은 마크업 패턴(.back-button + data-back-target="map-screen")을
-  // 붙이기만 하면 자동으로 동작한다.
-  document.querySelectorAll(".back-button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const currentScreen = btn.closest(".screen");
-      const targetId = currentScreen.dataset.backTarget;
-      const targetScreen = document.getElementById(targetId);
-      if (targetScreen) showScreen(targetScreen);
-    });
+  // ---------- 화면 공통 UI: 뒤로가기 / 홈 / 사운드 버튼 ----------
+  // 시작화면·캐릭터 선택 화면을 제외한 모든 화면(요괴맵부터 그 이후 전부)에
+  // 공통으로 붙는다. 화면마다 버튼 마크업을 반복해서 넣지 않도록, 여기서
+  // 한 번만 만들어서 각 화면에 주입한다.
+
+  let screenHistory = []; // 실제로 밟아온 화면 순서 스택. 뒤로가기는 여기서 pop한다.
+  let soundOn = true; // 사운드 on/off 상태. 아직 실제 재생 로직은 없고, 나중에 배경음/효과음을 붙일 때 이 값을 참조하면 된다.
+
+  function getVisibleScreen() {
+    return Array.from(screens).find((s) => !s.hidden) || null;
+  }
+
+  // 화면 전환 + 히스토리 기록을 함께 처리한다. 요괴맵 이후의 모든 "다음
+  // 화면으로 이동" 로직은 showScreen/enterScreen을 직접 부르는 대신 이
+  // 함수를 거쳐야 뒤로가기가 정확한 직전 화면을 기억한다.
+  function changeScreen(nextScreen, { animate = false } = {}) {
+    const current = getVisibleScreen();
+    if (current && current !== nextScreen) screenHistory.push(current);
+
+    if (animate) enterScreen(nextScreen);
+    else showScreen(nextScreen);
+  }
+
+  // 요괴맵은 히스토리 스택의 "루트"다. 요괴맵으로 돌아올 때마다(첫 진입,
+  // 스테이지 클리어 후 복귀) 스택을 비워서, 요괴맵에서 뒤로가기를 누르면
+  // 항상 시작화면으로 가도록 만든다(기존 button_back의 동작 그대로 유지).
+  function resetHistoryAndShow(screen) {
+    screenHistory = [];
+    showScreen(screen);
+  }
+
+  function goBackScreen() {
+    const previous = screenHistory.pop();
+    showScreen(previous || startScreen);
+  }
+
+  function goHomeScreen() {
+    screenHistory = [];
+    showScreen(startScreen);
+  }
+
+  function toggleSound(soundImg) {
+    soundOn = !soundOn;
+    soundImg.src = `asset/image/button_sound_${soundOn ? "on" : "off"}.png`;
+    console.log(soundOn ? "사운드 켜짐" : "사운드 꺼짐");
+  }
+
+  // 화면 하나에 붙일 뒤로가기/홈/사운드 버튼 3개를 새로 만들어 반환한다.
+  function createCommonUiButtons() {
+    const fragment = document.createDocumentFragment();
+
+    const backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.className = "back-button";
+    backBtn.innerHTML = `<img src="asset/image/button_back.png" alt="뒤로가기">`;
+    backBtn.addEventListener("click", goBackScreen);
+
+    const homeBtn = document.createElement("button");
+    homeBtn.type = "button";
+    homeBtn.className = "home-button";
+    homeBtn.innerHTML = `<img src="asset/image/button_home.png" alt="처음으로">`;
+    homeBtn.addEventListener("click", goHomeScreen);
+
+    const soundBtn = document.createElement("button");
+    soundBtn.type = "button";
+    soundBtn.className = "sound-button";
+    const soundImg = document.createElement("img");
+    soundImg.src = `asset/image/button_sound_${soundOn ? "on" : "off"}.png`;
+    soundImg.alt = "사운드 켜기/끄기";
+    soundBtn.appendChild(soundImg);
+    soundBtn.addEventListener("click", () => toggleSound(soundImg));
+
+    fragment.appendChild(backBtn);
+    fragment.appendChild(homeBtn);
+    fragment.appendChild(soundBtn);
+    return fragment;
+  }
+
+  // 시작화면·캐릭터 선택 화면을 제외한 모든 화면에 공통 버튼 3개를 주입한다.
+  const COMMON_UI_EXCLUDED_SCREENS = [startScreen, characterScreen];
+  screens.forEach((screen) => {
+    if (COMMON_UI_EXCLUDED_SCREENS.includes(screen)) return;
+    screen.appendChild(createCommonUiButtons());
   });
 
   // ---------- 1단계 -> 2단계 ----------
@@ -81,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       setTimeout(() => {
         selectedCharacter = null;
-        showScreen(mapScreen);
+        resetHistoryAndShow(mapScreen);
         renderMap();
       }, 600);
     });
@@ -104,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
     yagwanggwi: game1RuleScreen,
     geuseundae: game2RuleScreen,
     bulgasari: game3RuleScreen,
+    dokkaebi: game4RuleScreen,
   };
 
   const STAGE_WIDTH = 14; // 발판 가로폭 (%)
@@ -208,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const targetScreen = STAGE_SCREENS[stage.key];
         if (targetScreen) {
-          enterScreen(targetScreen);
+          changeScreen(targetScreen, { animate: true });
         }
         // TODO: 나머지 스테이지 게임 화면 연결 예정
       });
@@ -322,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 구간이 있으면 점프 연출을, 없으면(마지막 스테이지) 평소처럼 정적으로 보여준다.
   function clearStageAndReturnToMap(stageKey) {
     clearedStages[stageKey] = true;
-    showScreen(mapScreen);
+    resetHistoryAndShow(mapScreen);
 
     const fromIndex = STAGES.findIndex((s) => s.key === stageKey);
     const fromStage = STAGES[fromIndex];
@@ -345,22 +423,51 @@ document.addEventListener("DOMContentLoaded", () => {
   game1ChallengeButton.addEventListener("click", () => {
     console.log("야광귀 게임 시작");
     resetGame1();
-    showScreen(game1PlayScreen);
+    changeScreen(game1PlayScreen);
   });
 
   // ---------- 그슨대 룰 설명 화면 ----------
   game2ChallengeButton.addEventListener("click", () => {
     console.log("그슨대 게임 시작");
     resetGame2();
-    showScreen(game2PlayScreen);
+    changeScreen(game2PlayScreen);
   });
 
   // ---------- 불가살이 룰 설명 화면 ----------
   game3ChallengeButton.addEventListener("click", () => {
     console.log("불가살이 게임 시작");
-    showScreen(game3PlayScreen);
+    changeScreen(game3PlayScreen);
     startGame3();
   });
+
+  // ---------- 도깨비 룰 설명 화면 ----------
+  game4ChallengeButton.addEventListener("click", () => {
+    console.log("도깨비 게임 시작");
+    changeScreen(game4PlayScreen);
+  });
+
+  // ---------- 도깨비 실제 게임 화면 (맞춤법 퀴즈) ----------
+
+  function handleGame4Correct() {
+    console.log("정답! 여린히읗 획득 스토리 화면으로 이동");
+    goToGame4Clear();
+  }
+
+  // 오답 연출은 야광귀 게임의 handleWrongJamo()와 동일한 기법(화면 흔들림
+  // 클래스를 뗐다 리플로우 후 다시 붙이기)을 재사용한다. 다시 선택할 수
+  // 있도록 화면 전환 없이 그대로 유지한다.
+  function handleGame4Wrong() {
+    game4PlayScreen.classList.remove("is-shaking");
+    void game4PlayScreen.offsetWidth;
+    game4PlayScreen.classList.add("is-shaking");
+  }
+
+  function goToGame4Clear() {
+    goToGame4Story1();
+  }
+
+  game4QuizAButton.addEventListener("click", handleGame4Correct);
+  game4QuizBButton.addEventListener("click", handleGame4Wrong);
 
   // ---------- 불가살이 실제 게임 화면 (쇠 받기) ----------
 
@@ -368,10 +475,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const GAME3_MOVE_SPEED_PERCENT = 45; // 캐릭터 초당 좌우 이동 속도 (화면 너비 대비 %)
   const GAME3_CHAR_MIN_LEFT = 8; // 캐릭터 이동 가능 범위 (%)
   const GAME3_CHAR_MAX_LEFT = 92;
-  const GAME3_FALL_SPEED_MIN = 9; // 낙하 아이템 초당 낙하 속도 최소/최대 (화면 높이 대비 %)
-  const GAME3_FALL_SPEED_MAX = 14;
-  const GAME3_SPAWN_INTERVAL_MIN = 1400; // 아이템 생성 간격 최소/최대 (ms) — 여러 개가 한 번에 몰리지 않도록 넉넉하게
-  const GAME3_SPAWN_INTERVAL_MAX = 2200;
+  const GAME3_FALL_SPEED_MIN = 18; // 낙하 아이템 초당 낙하 속도 최소/최대 (화면 높이 대비 %)
+  const GAME3_FALL_SPEED_MAX = 27;
+  const GAME3_SPAWN_INTERVAL_MIN = 900; // 아이템 생성 간격 최소/최대 (ms)
+  const GAME3_SPAWN_INTERVAL_MAX = 1400;
   const GAME3_ITEM_SPAWN_MARGIN = 8; // 아이템이 스폰되는 x좌표의 좌우 여백 (%)
   const GAME3_MIN_SPAWN_X_GAP = 22; // 직전에 스폰한 아이템과 x좌표가 이 값(%)보다 가까우면 다시 뽑는다
   const GAME3_ITEM_DESPAWN_Y = 112; // 이 아래로 내려가면 화면 밖으로 사라진 것으로 간주 (%)
@@ -630,7 +737,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function goToGame3Clear() {
     console.log("옛이응 획득 스토리 화면으로 이동");
-    // TODO: 불가살이 클리어 스토리 화면 연결 예정
+    goToGame3Story1();
   }
 
   document.addEventListener("keydown", (event) => {
@@ -973,13 +1080,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function goToStory1() {
-    enterScreen(yagwanggwiStory1Screen);
+    changeScreen(yagwanggwiStory1Screen, { animate: true });
     setTimeout(spawnZipsinSparkle, ZIPSIN_SPARKLE_DELAY_MS);
     setTimeout(goToStory2, 1300 + STORY_HOLD_MS); // 등장 연출(약 1.3초) + 유지(3초)
   }
 
   function goToStory2() {
-    enterScreen(yagwanggwiStory2Screen);
+    changeScreen(yagwanggwiStory2Screen, { animate: true });
     setTimeout(goToStory3, 1400 + STORY_HOLD_MS);
   }
 
@@ -1014,7 +1121,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function goToStory3() {
-    enterScreen(yagwanggwiStory3Screen);
+    changeScreen(yagwanggwiStory3Screen, { animate: true });
     playClearCardEntrance(story3Card, story3CardInner);
   }
 
@@ -1046,12 +1153,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const GAME2_STORY1_ADVANCE_MS = 4500; // 진입 후 story2로 자동 전환되기까지 총 시간
 
   function goToGame2Story1() {
-    enterScreen(game2Story1Screen);
+    changeScreen(game2Story1Screen, { animate: true });
     setTimeout(goToGame2Story2, GAME2_STORY1_ADVANCE_MS);
   }
 
   function goToGame2Story2() {
-    enterScreen(game2Story2Screen);
+    changeScreen(game2Story2Screen, { animate: true });
     playClearCardEntrance(game2StoryCard, game2StoryCardInner);
   }
 
@@ -1062,5 +1169,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
   game2StoryNextButton.addEventListener("click", () => {
     clearStageAndReturnToMap("geuseundae");
+  });
+
+  // ---------- 불가살이 클리어 스토리 연출 ----------
+
+  const game3Story1Screen = document.getElementById("game3-story1-screen");
+  const game3Story2Screen = document.getElementById("game3-story2-screen");
+  const game3StoryCard = document.getElementById("game3-story-card");
+  const game3StoryCardInner = document.getElementById("game3-story-card-inner");
+  const game3StoryNextButton = document.getElementById("game3-story-next-button");
+
+  const GAME3_STORY1_ADVANCE_MS = 3200; // 진입 후 카드 획득 화면으로 자동 전환되기까지 총 시간
+
+  function goToGame3Story1() {
+    changeScreen(game3Story1Screen, { animate: true });
+    setTimeout(goToGame3Story2, GAME3_STORY1_ADVANCE_MS);
+  }
+
+  function goToGame3Story2() {
+    changeScreen(game3Story2Screen, { animate: true });
+    playClearCardEntrance(game3StoryCard, game3StoryCardInner);
+  }
+
+  game3StoryCard.addEventListener("click", () => {
+    if (!game3StoryCard.classList.contains("is-settled")) return; // 등장 연출 끝나기 전엔 무시
+    game3StoryCard.classList.toggle("is-flipped");
+  });
+
+  game3StoryNextButton.addEventListener("click", () => {
+    clearStageAndReturnToMap("bulgasari");
+  });
+
+  // ---------- 도깨비 클리어 스토리 연출 ----------
+
+  const game4Story1Screen = document.getElementById("game4-story1-screen");
+  const game4Story2Screen = document.getElementById("game4-story2-screen");
+  const game4StoryCard = document.getElementById("game4-story-card");
+  const game4StoryCardInner = document.getElementById("game4-story-card-inner");
+  const game4StoryNextButton = document.getElementById("game4-story-next-button");
+
+  const GAME4_STORY1_ADVANCE_MS = 3200; // 진입 후 카드 획득 화면으로 자동 전환되기까지 총 시간
+
+  function goToGame4Story1() {
+    changeScreen(game4Story1Screen, { animate: true });
+    setTimeout(goToGame4Story2, GAME4_STORY1_ADVANCE_MS);
+  }
+
+  function goToGame4Story2() {
+    changeScreen(game4Story2Screen, { animate: true });
+    playClearCardEntrance(game4StoryCard, game4StoryCardInner);
+  }
+
+  game4StoryCard.addEventListener("click", () => {
+    if (!game4StoryCard.classList.contains("is-settled")) return; // 등장 연출 끝나기 전엔 무시
+    game4StoryCard.classList.toggle("is-flipped");
+  });
+
+  // 도깨비는 마지막 스테이지라 clearStageAndReturnToMap이 다음 스테이지로
+  // 점프시키지 않고 그대로 요괴맵에 머문다(모든 발판이 on 상태로 표시됨).
+  // 엔딩 화면은 아직 없어서 콘솔 로그로만 완료를 알린다.
+  game4StoryNextButton.addEventListener("click", () => {
+    clearStageAndReturnToMap("dokkaebi");
+    console.log("게임 클리어! 모든 자모 획득 완료");
   });
 });

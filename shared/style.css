@@ -231,6 +231,49 @@ html, body {
   transform: translate(-50%, -50%) scale(0.94);
 }
 
+/* ---------- 화면 공통 UI 버튼: 홈 / 사운드 (우상단) ----------
+   back-button과 같은 크기·세로 위치를 쓰되 좌우만 뒤집어 우상단에 배치한다.
+   사운드 버튼이 화면 가장 바깥쪽(우측 끝), 홈 버튼이 그 왼쪽 옆에 온다
+   (6.game4.png 시안 기준 배치). */
+.home-button,
+.sound-button {
+  position: absolute;
+  top: 9.3%;
+  width: 5.2%;
+  transform: translate(50%, -50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 20;
+}
+
+.home-button {
+  right: 12.4%;
+}
+
+.sound-button {
+  right: 5.7%;
+}
+
+.home-button img,
+.sound-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.home-button:hover,
+.sound-button:hover {
+  transform: translate(50%, -50%) scale(1.08);
+}
+
+.home-button:active,
+.sound-button:active {
+  transform: translate(50%, -50%) scale(0.94);
+}
+
 .stage-wrap {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -506,6 +549,142 @@ html, body {
 
 #game3-rule-screen.is-playing .rule-challenge-button {
   animation: rule-fade-in 0.4s ease-out 1s forwards;
+}
+
+/* ---------- 도깨비 룰 설명 화면 ---------- */
+
+/* 캐릭터와 말풍선의 공통 부모. 야광귀/그슨대/불가살이 룰 화면과 동일한
+   패턴 — 말풍선을 wrap의 자식으로 넣고 wrap 기준 상대 좌표(%)로 배치해
+   항상 캐릭터 옆에 붙어 있도록 한다(6.game4-0.png 시안 실측 좌표 기준
+   배치. 다만 말풍선(talk_dk.png)은 이 시안에 나타나 있지 않아 talk_dk.png의
+   꼬리 방향에 맞춰 불가살이 룰 화면과 비슷한 비율로 추정 배치했다 — 화면
+   보며 미세 조정 필요). */
+.dk-rule-char-wrap {
+  position: absolute;
+  bottom: 16%;
+  left: 50%;
+  width: 18.5%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.dk-rule-character {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dk-rule-talk {
+  position: absolute;
+  top: -36%;
+  left: -112%;
+  width: 92%;
+  height: auto;
+  z-index: 6;
+  opacity: 0;
+}
+
+#game4-rule-screen.is-playing .dk-rule-talk {
+  animation: rule-talk-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+
+#game4-rule-screen.is-playing .rule-mission {
+  animation: rule-fade-in 0.7s ease-out 0.25s forwards;
+}
+
+#game4-rule-screen.is-playing .rule-challenge-button {
+  animation: rule-fade-in 0.4s ease-out 1s forwards;
+}
+
+/* ---------- 도깨비 실제 게임 화면 (맞춤법 퀴즈) ---------- */
+
+/* 간판 이미지 자체에 걸이/고리 끝부분이 포함돼 있어서, top:0으로 화면
+   맨 위에 딱 붙이고 가로만 중앙 정렬한다(6.game4.png 시안 기준). */
+.game4-quiz-mission {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 35%;
+  height: auto;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* 답변 선택지 2개. 아이콘(요괴불)이 카드 이미지 위쪽에 이미 포함돼 있어서
+   버튼 하나에 이미지 하나만 넣으면 된다(6.game4.png 시안 기준 좌우 배치). */
+.game4-quiz-option {
+  position: absolute;
+  top: 27%;
+  width: 29%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 5;
+}
+
+.game4-quiz-option--a {
+  left: 24%;
+}
+
+.game4-quiz-option--b {
+  left: 76%;
+}
+
+.game4-quiz-option img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.game4-quiz-option:hover {
+  transform: translateX(-50%) scale(1.04);
+}
+
+.game4-quiz-option:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
+/* 캐릭터와 말풍선의 공통 부모. 다른 화면들과 동일한 패턴 — 말풍선을
+   wrap의 자식으로 넣어 상대 좌표로 배치한다. ms_dk_sick.png 한 장에
+   캐릭터와 링거 거치대가 함께 그려져 있어 별도 요소 없이 이미지 하나로
+   처리한다.
+   6.game4.png 시안을 1920x1080 기준으로 실측한 결과 캐릭터(링거 포함)는
+   화면 폭의 약 18.5%, 말풍선은 그 위 살짝 왼쪽(캐릭터 머리 위)에 폭
+   11~12% 정도로 작게 자리한다. 그대로 쓰면 선택지 카드 하단과 거의 맞닿아
+   여유가 없어서, 두 선택지 사이 아래쪽 여백 안에 확실히 들어오도록 폭을
+   조금 더 줄이고(15%) 중앙(51%)에 맞췄다. */
+.dk-quiz-char-wrap {
+  position: absolute;
+  bottom: 3%;
+  left: 51%;
+  width: 15%;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.dk-quiz-character {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dk-quiz-talk {
+  position: absolute;
+  top: -78%;
+  left: 10%;
+  width: 76%;
+  height: auto;
+  z-index: 6;
+}
+
+/* 오답 연출은 야광귀 게임(#game1-play-screen.is-shaking)과 동일한
+   game1-shake 키프레임을 그대로 재사용한다. */
+#game4-play-screen.is-shaking {
+  animation: game1-shake 0.35s ease-in-out;
 }
 
 /* ---------- 불가살이 실제 게임 화면 (쇠 받기) ---------- */
@@ -1317,6 +1496,116 @@ html, body {
 }
 
 #game2-story2-screen.is-playing .story3-next-button {
+  animation: rule-fade-in 0.4s ease-out 1.4s forwards;
+}
+
+/* ---------- 불가살이 클리어 스토리 1: '옛이응'을 돌려주는 불가살이 ---------- */
+
+/* 캐릭터와 말풍선의 공통 부모. 그슨대 클리어 스토리(.game2-story1-char-wrap)와
+   같은 패턴 — 말풍선을 화면 기준이 아니라 이 wrap의 자식으로 넣어 상대
+   좌표로 붙인다. talk_bs_story.png의 꼬리가 우하단(캐릭터 쪽)을 향하고
+   있어 말풍선은 캐릭터의 좌상단에 배치했다(정확한 실측 시안이 없어 화면
+   보며 미세 조정 가능). */
+.game3-story1-char-wrap {
+  position: absolute;
+  top: 56%;
+  left: 50%;
+  width: 15%;
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0;
+  z-index: 5;
+}
+
+#game3-story1-screen.is-playing .game3-story1-char-wrap {
+  animation: story2-character-in 0.5s ease-out forwards;
+}
+
+.game3-story1-character {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.game3-story1-talk {
+  position: absolute;
+  top: -44%;
+  left: -140%;
+  width: 140%;
+  height: auto;
+  opacity: 0;
+  z-index: 7;
+}
+
+#game3-story1-screen.is-playing .game3-story1-talk {
+  animation: game2-story1-talk-in 0.4s ease-out 0.5s forwards;
+}
+
+/* ---------- 불가살이 클리어 스토리 2: '옛이응' 카드 획득 ----------
+   카드/타이틀/다음 버튼은 야광귀 스토리3의 .story3-title / .story3-card /
+   .story3-next-button 클래스를 그대로 재사용하고, 화면 ID로 스코프한
+   is-playing 트리거만 새로 추가한다(카드 진입 애니메이션은 main.js의
+   playClearCardEntrance()가 공용으로 재생한다). */
+
+#game3-story2-screen.is-playing .story3-title {
+  animation: rule-fade-in 0.5s ease-out forwards;
+}
+
+#game3-story2-screen.is-playing .story3-next-button {
+  animation: rule-fade-in 0.4s ease-out 1.4s forwards;
+}
+
+/* ---------- 도깨비 클리어 스토리 1: '여린히읗'을 돌려주는 도깨비 ---------- */
+
+/* 캐릭터와 말풍선의 공통 부모. 불가살이 클리어 스토리(.game3-story1-char-wrap)와
+   같은 패턴 — 말풍선을 화면 기준이 아니라 이 wrap의 자식으로 넣어 상대
+   좌표로 붙인다. 도깨비 룰 화면(.dk-rule-talk, wrap 폭 18.5%)과 같은
+   말풍선 계열이라 그 배치 비율을 이 wrap의 폭(15%)에 맞게 환산해
+   추정했다(정확한 실측 시안이 없어 화면 보며 미세 조정 가능). */
+.game4-story1-char-wrap {
+  position: absolute;
+  top: 56%;
+  left: 50%;
+  width: 15%;
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0;
+  z-index: 5;
+}
+
+#game4-story1-screen.is-playing .game4-story1-char-wrap {
+  animation: story2-character-in 0.5s ease-out forwards;
+}
+
+.game4-story1-character {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.game4-story1-talk {
+  position: absolute;
+  top: -44%;
+  left: -138%;
+  width: 113%;
+  height: auto;
+  opacity: 0;
+  z-index: 7;
+}
+
+#game4-story1-screen.is-playing .game4-story1-talk {
+  animation: game2-story1-talk-in 0.4s ease-out 0.5s forwards;
+}
+
+/* ---------- 도깨비 클리어 스토리 2: '여린히읗' 카드 획득 ----------
+   카드/타이틀/다음 버튼은 야광귀 스토리3의 .story3-title / .story3-card /
+   .story3-next-button 클래스를 그대로 재사용하고, 화면 ID로 스코프한
+   is-playing 트리거만 새로 추가한다(카드 진입 애니메이션은 main.js의
+   playClearCardEntrance()가 공용으로 재생한다). */
+
+#game4-story2-screen.is-playing .story3-title {
+  animation: rule-fade-in 0.5s ease-out forwards;
+}
+
+#game4-story2-screen.is-playing .story3-next-button {
   animation: rule-fade-in 0.4s ease-out 1.4s forwards;
 }
 

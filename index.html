@@ -44,26 +44,18 @@
   </div>
 </div>
 
-<div class="screen" id="map-screen" data-back-target="start-screen" hidden>
+<div class="screen" id="map-screen" hidden>
   <img class="bg" src="asset/image/Background_step3.png" alt="배경">
 
   <div class="firefly-layer" id="firefly-layer"></div>
-
-  <button class="back-button" type="button">
-    <img src="asset/image/button_back.png" alt="뒤로가기">
-  </button>
 
   <div class="stage-track" id="stage-track"></div>
 
   <img class="map-character" id="map-character" alt="캐릭터" hidden>
 </div>
 
-<div class="screen" id="game1-rule-screen" data-back-target="map-screen" hidden>
+<div class="screen" id="game1-rule-screen" hidden>
   <img class="bg" src="asset/image/Background_step4.png" alt="배경">
-
-  <button class="back-button" type="button">
-    <img src="asset/image/button_back.png" alt="뒤로가기">
-  </button>
 
   <img class="rule-mission" src="asset/image/mission_game1.png" alt="미션 설명">
 
@@ -76,12 +68,8 @@
   </button>
 </div>
 
-<div class="screen" id="game2-rule-screen" data-back-target="map-screen" hidden>
+<div class="screen" id="game2-rule-screen" hidden>
   <img class="bg" src="asset/image/Background_step5.png" alt="배경">
-
-  <button class="back-button" type="button">
-    <img src="asset/image/button_back.png" alt="뒤로가기">
-  </button>
 
   <img class="rule-mission" src="asset/image/mission_game2.png" alt="미션 설명">
 
@@ -95,12 +83,8 @@
   </button>
 </div>
 
-<div class="screen" id="game3-rule-screen" data-back-target="map-screen" hidden>
+<div class="screen" id="game3-rule-screen" hidden>
   <img class="bg" src="asset/image/Background_step6.png" alt="배경">
-
-  <button class="back-button" type="button">
-    <img src="asset/image/button_back.png" alt="뒤로가기">
-  </button>
 
   <img class="rule-mission" src="asset/image/mission_game3.png" alt="미션 설명">
 
@@ -114,12 +98,8 @@
   </button>
 </div>
 
-<div class="screen" id="game3-play-screen" data-back-target="map-screen" hidden>
+<div class="screen" id="game3-play-screen" hidden>
   <img class="bg" src="asset/image/Background_step6.png" alt="배경">
-
-  <button class="back-button" type="button">
-    <img src="asset/image/button_back.png" alt="뒤로가기">
-  </button>
 
   <img class="game3-mission" src="asset/image/mission_game3_main.png" alt="불을 피해 쇠를 3개 모아줘! 쇠를 좋아하는 불가살이를 위해 쇠로 만들어진 단어를 모아주세요.">
 
@@ -133,28 +113,20 @@
   <img class="game3-character" id="game3-character" src="asset/image/ms_bs_game_happy.png" alt="불가살이">
 </div>
 
-<div class="screen" id="game2-play-screen" data-back-target="map-screen" hidden>
+<div class="screen" id="game2-play-screen" hidden>
   <img class="bg" src="asset/image/Background_step5_bright.png" alt="배경(밝음)">
 
   <img class="bg game2-dark-overlay" id="game2-dark-overlay" src="asset/image/Background_step5.png" alt="배경(어둠)">
 
   <div class="game2-hidden-layer" id="game2-hidden-layer"></div>
 
-  <button class="back-button" type="button">
-    <img src="asset/image/button_back.png" alt="뒤로가기">
-  </button>
-
   <img class="game2-mission" id="game2-mission" src="asset/image/mission_game2_main.png" alt="숨은 그슨대를 찾아줘! 손전등을 비춰 유사한 물체들 사이 숨은 그슨대를 찾아주세요.">
 
   <img class="game2-mission-find" id="game2-mission-find" src="asset/image/mission_game2_find.png" alt="찾았다!">
 </div>
 
-<div class="screen" id="game1-play-screen" data-back-target="map-screen" hidden>
+<div class="screen" id="game1-play-screen" hidden>
   <img class="bg" src="asset/image/Background_step4.png" alt="배경">
-
-  <button class="back-button" type="button">
-    <img src="asset/image/button_back.png" alt="뒤로가기">
-  </button>
 
   <img class="game1-mission" src="asset/image/mission_game1_main.png" alt="'짚신' 글씨를 만들어줘 - 순서대로 클릭해 야광귀에게 짚신을 전달해요">
 
@@ -244,6 +216,92 @@
   </div>
 
   <button class="story3-next-button" id="game2-story-next-button" type="button">
+    <img src="asset/image/button_next.png" alt="다음">
+  </button>
+</div>
+
+<div class="screen" id="game3-story1-screen" hidden>
+  <img class="bg" src="asset/image/Background_step6.png" alt="배경">
+
+  <div class="game3-story1-char-wrap" id="game3-story1-char-wrap">
+    <img class="game3-story1-character" src="asset/image/ms_bs_basic.png" alt="불가살이">
+    <img class="game3-story1-talk" src="asset/image/talk_bs_story.png" alt="좋아하는 쇠를 모아줬으니 '옛이응'을 돌려줄게">
+  </div>
+</div>
+
+<div class="screen" id="game3-story2-screen" hidden>
+  <img class="bg" src="asset/image/Background_step6.png" alt="배경">
+
+  <img class="story3-title" src="asset/image/bsstory_talk.png" alt="'옛이응' 카드를 획득했다">
+
+  <div class="story3-card" id="game3-story-card">
+    <div class="story3-card__inner" id="game3-story-card-inner">
+      <img class="story3-card__face story3-card__face--front" src="asset/image/card_3_front.png" alt="옛이응 카드 앞면">
+      <img class="story3-card__face story3-card__face--back" src="asset/image/card_3_back.png" alt="옛이응 카드 뒷면">
+    </div>
+  </div>
+
+  <button class="story3-next-button" id="game3-story-next-button" type="button">
+    <img src="asset/image/button_next.png" alt="다음">
+  </button>
+</div>
+
+<div class="screen" id="game4-rule-screen" hidden>
+  <img class="bg" src="asset/image/Background_step7.png" alt="배경">
+
+  <img class="rule-mission" src="asset/image/mission_game4_story.png" alt="미션 설명">
+
+  <div class="dk-rule-char-wrap">
+    <img class="dk-rule-character" src="asset/image/ms_dk_basic.png" alt="도깨비">
+    <img class="dk-rule-talk" src="asset/image/talk_dk.png" alt="도깨비 대사">
+  </div>
+
+  <button class="rule-challenge-button" id="game4-challenge-button" type="button">
+    <img src="asset/image/button_dojun.png" alt="도전">
+  </button>
+</div>
+
+<div class="screen" id="game4-play-screen" hidden>
+  <img class="bg" src="asset/image/Background_step7.png" alt="배경">
+
+  <img class="game4-quiz-mission" src="asset/image/mission_game4.png" alt="올바른 맞춤법을 골라줘! 아픈 도깨비에게 해줄 수 있는 말을 골라주세요">
+
+  <div class="dk-quiz-char-wrap">
+    <img class="dk-quiz-character" src="asset/image/ms_dk_sick.png" alt="도깨비">
+    <img class="dk-quiz-talk" src="asset/image/talk_dk_quiz.png" alt="나 너무 아파">
+  </div>
+
+  <button class="game4-quiz-option game4-quiz-option--a" id="game4-quiz-a" type="button">
+    <img src="asset/image/game4_quizA.png" alt="어서 빨리 나아!">
+  </button>
+
+  <button class="game4-quiz-option game4-quiz-option--b" id="game4-quiz-b" type="button">
+    <img src="asset/image/game4_quizB.png" alt="어서 빨리 낳아!">
+  </button>
+</div>
+
+<div class="screen" id="game4-story1-screen" hidden>
+  <img class="bg" src="asset/image/Background_step7.png" alt="배경">
+
+  <div class="game4-story1-char-wrap" id="game4-story1-char-wrap">
+    <img class="game4-story1-character" src="asset/image/ms_dk_basic.png" alt="도깨비">
+    <img class="game4-story1-talk" src="asset/image/talk_dk_story.png" alt="대단한걸? '여린히읗'을 돌려줄게">
+  </div>
+</div>
+
+<div class="screen" id="game4-story2-screen" hidden>
+  <img class="bg" src="asset/image/Background_step7.png" alt="배경">
+
+  <img class="story3-title" src="asset/image/dkstory_talk2.png" alt="'여린히읗' 카드를 획득했다">
+
+  <div class="story3-card" id="game4-story-card">
+    <div class="story3-card__inner" id="game4-story-card-inner">
+      <img class="story3-card__face story3-card__face--front" src="asset/image/card_5_front.png" alt="여린히읗 카드 앞면">
+      <img class="story3-card__face story3-card__face--back" src="asset/image/card_5_back.png" alt="여린히읗 카드 뒷면">
+    </div>
+  </div>
+
+  <button class="story3-next-button" id="game4-story-next-button" type="button">
     <img src="asset/image/button_next.png" alt="다음">
   </button>
 </div>
