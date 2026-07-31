@@ -233,11 +233,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- 배경 반딧불이 파티클 ----------
   const FIREFLY_COUNT = 13;
 
-  function buildFireflies() {
-    const layer = document.getElementById("firefly-layer");
+  function buildFireflies(layerId, count = FIREFLY_COUNT) {
+    const layer = document.getElementById(layerId);
+    if (!layer) return;
     layer.innerHTML = "";
 
-    for (let i = 0; i < FIREFLY_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
       const firefly = document.createElement("div");
       firefly.className = "firefly";
       firefly.style.left = `${Math.random() * 100}%`;
@@ -417,7 +418,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   buildStageTrack();
   renderMap();
-  buildFireflies();
+  buildFireflies("firefly-layer");
+  buildFireflies("start-firefly-layer", 14);
 
   // ---------- 야광귀 룰 설명 화면 ----------
   game1ChallengeButton.addEventListener("click", () => {

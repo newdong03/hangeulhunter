@@ -37,9 +37,9 @@ html, body {
 
 .logo-typo {
   position: absolute;
-  top: 49%;
+  top: 41%;
   left: 50%;
-  width: 24%;
+  width: 28%;
   height: auto;
   transform: translate(-50%, -50%);
   z-index: 10;
@@ -47,9 +47,9 @@ html, body {
 
 .start-button {
   position: absolute;
-  top: 75%;
+  top: 68%;
   left: 50%;
-  width: 19.2%;
+  width: 25%;
   transform: translate(-50%, -50%);
   background: none;
   border: none;
@@ -88,11 +88,13 @@ html, body {
   display: block;
 }
 
-/* 야광귀 - 좌상단 */
+/* 야광귀 - 좌상단. 목업(1.startscreen_2.png)을 실측(1920x1080 기준
+   픽셀 좌표 측정 후 % 환산)해 크기/좌표를 맞췄다 — 이전 값(17%)은
+   목업보다 캐릭터가 커진 상태였다. */
 .monster-wrap--tl {
-  top: 22%;
-  left: 25.5%;
-  width: 11%;
+  top: 24%;
+  left: 27%;
+  width: 12%;
 }
 .monster-wrap--tl .monster {
   animation: float-a 4s ease-in-out infinite;
@@ -101,9 +103,9 @@ html, body {
 
 /* 그슨대 - 좌하단 */
 .monster-wrap--bl {
-  top: 76%;
-  left: 18%;
-  width: 17%;
+  top: 74%;
+  left: 23%;
+  width: 16%;
 }
 .monster-wrap--bl .monster {
   animation: float-b 4.6s ease-in-out infinite;
@@ -112,8 +114,8 @@ html, body {
 
 /* 불가살이 - 우상단 */
 .monster-wrap--tr {
-  top: 25%;
-  left: 80%;
+  top: 24%;
+  left: 74%;
   width: 15%;
 }
 .monster-wrap--tr .monster {
@@ -123,8 +125,8 @@ html, body {
 
 /* 도깨비 - 우하단 */
 .monster-wrap--br {
-  top: 76%;
-  left: 87.5%;
+  top: 78%;
+  left: 79%;
   width: 12%;
 }
 .monster-wrap--br .monster {
@@ -150,6 +152,76 @@ html, body {
 @keyframes float-d {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-32px); }
+}
+
+/* 캐릭터 옆에 떠 있는 작은 구름 장식. 캐릭터(.monster-wrap, z-index:5)보다
+   아래 레이어(z-index:2)에 깔아서 일부가 캐릭터에 가려져도 자연스럽고,
+   캐릭터와 나란히 살짝 옆으로 비켜 배치해 완전히 겹치지 않게 한다.
+   캐릭터의 float-a~d와는 다른 주기/딜레이로 흔들어 서로 박자가
+   어긋나 보이도록 한다.
+   위치/크기는 목업(1.startscreen_2.png) 실측값 기준 — 그슨대 구름(--2)은
+   목업 좌표(12%,86%) 그대로 두면 실제 배경(Background_step1.png)의
+   단색 구간과 겹쳐 안 보이는 지점이라 세로로 2%p만 내려 피했고, 나머지는
+   목업 좌표를 그대로 따른다. */
+.start-cloud {
+  position: absolute;
+  width: 8%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.start-cloud--1 {
+  top: 26%;
+  left: 13%;
+  width: 6%;
+  animation: cloud-float-1 5.2s ease-in-out infinite;
+}
+
+.start-cloud--2 {
+  top: 88%;
+  left: 12%;
+  width: 12%;
+  animation: cloud-float-2 6.4s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
+.start-cloud--3 {
+  top: 13%;
+  left: 90%;
+  width: 8%;
+  animation: cloud-float-3 5.8s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+.start-cloud--4 {
+  top: 83%;
+  left: 62%;
+  width: 8%;
+  animation: cloud-float-4 6s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+@keyframes cloud-float-1 {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-12px); }
+}
+
+@keyframes cloud-float-2 {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-9px); }
+}
+
+@keyframes cloud-float-3 {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-14px); }
+}
+
+@keyframes cloud-float-4 {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-10px); }
 }
 
 /* ---------- 캐릭터 선택 화면 ---------- */
