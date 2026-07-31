@@ -588,6 +588,13 @@ html, body {
   animation: rule-talk-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
 }
 
+/* mission_game4_story.png도 mission_game3.png와 같은 이유로 텍스트 주변
+   여백이 많아서 공용 .rule-mission 크기(30.3%) 그대로 두면 다른 룰
+   화면보다 작아 보인다. 이 화면에서만 스코프해서 키운다. */
+#game4-rule-screen .rule-mission {
+  width: 38%;
+}
+
 #game4-rule-screen.is-playing .rule-mission {
   animation: rule-fade-in 0.7s ease-out 0.25s forwards;
 }
@@ -604,7 +611,7 @@ html, body {
   position: absolute;
   top: 0;
   left: 50%;
-  width: 35%;
+  width: 32%;
   height: auto;
   transform: translateX(-50%);
   z-index: 5;
@@ -612,11 +619,14 @@ html, body {
 }
 
 /* 답변 선택지 2개. 아이콘(요괴불)이 카드 이미지 위쪽에 이미 포함돼 있어서
-   버튼 하나에 이미지 하나만 넣으면 된다(6.game4.png 시안 기준 좌우 배치). */
+   버튼 하나에 이미지 하나만 넣으면 된다(6.game4.png 시안 기준 좌우 배치).
+   캐릭터/말풍선을 키울 자리를 확보하기 위해 폭을 29%->25%로 줄였다 —
+   센터 앵커(24%/76%)는 그대로 두므로 줄어든 만큼 가운데 여백이 넓어진다.
+   등장은 캐릭터/말풍선보다 늦게, is-playing 트리거로 딜레이를 주어 페이드인한다. */
 .game4-quiz-option {
   position: absolute;
   top: 27%;
-  width: 29%;
+  width: 25%;
   transform: translateX(-50%);
   background: none;
   border: none;
@@ -624,6 +634,11 @@ html, body {
   cursor: pointer;
   transition: transform 0.15s ease;
   z-index: 5;
+  opacity: 0;
+}
+
+#game4-play-screen.is-playing .game4-quiz-option {
+  animation: rule-fade-in 0.5s ease-out 0.9s forwards;
 }
 
 .game4-quiz-option--a {
@@ -652,18 +667,22 @@ html, body {
    wrap의 자식으로 넣어 상대 좌표로 배치한다. ms_dk_sick.png 한 장에
    캐릭터와 링거 거치대가 함께 그려져 있어 별도 요소 없이 이미지 하나로
    처리한다.
-   6.game4.png 시안을 1920x1080 기준으로 실측한 결과 캐릭터(링거 포함)는
-   화면 폭의 약 18.5%, 말풍선은 그 위 살짝 왼쪽(캐릭터 머리 위)에 폭
-   11~12% 정도로 작게 자리한다. 그대로 쓰면 선택지 카드 하단과 거의 맞닿아
-   여유가 없어서, 두 선택지 사이 아래쪽 여백 안에 확실히 들어오도록 폭을
-   조금 더 줄이고(15%) 중앙(51%)에 맞췄다. */
+   선택지 카드 폭을 25%로 줄여 생긴 가운데 여백 안에서 캐릭터/말풍선을
+   15%->17%로 키웠다(선택지·캐릭터·말풍선 서로 4%p 이상 여백 확보 확인).
+   화면 진입 시 이 캐릭터/말풍선이 먼저 나타나고, 그 다음 선택지가
+   나타나도록 is-playing 트리거의 애니메이션 딜레이를 선택지보다 짧게 둔다. */
 .dk-quiz-char-wrap {
   position: absolute;
   bottom: 3%;
   left: 51%;
-  width: 15%;
+  width: 17%;
   transform: translateX(-50%);
   z-index: 4;
+  opacity: 0;
+}
+
+#game4-play-screen.is-playing .dk-quiz-char-wrap {
+  animation: rule-fade-in 0.6s ease-out 0.2s forwards;
 }
 
 .dk-quiz-character {
@@ -691,9 +710,9 @@ html, body {
 
 .game3-mission {
   position: absolute;
-  top: 6%;
+  top: 0;
   left: 50%;
-  width: 39%;
+  width: 32%;
   height: auto;
   transform: translateX(-50%);
   z-index: 5;
@@ -904,9 +923,9 @@ html, body {
 
 .game2-mission {
   position: absolute;
-  top: 8%;
+  top: 0;
   left: 50%;
-  width: 30%;
+  width: 32%;
   height: auto;
   transform: translateX(-50%);
   z-index: 5;
@@ -920,9 +939,9 @@ html, body {
 
 .game2-mission-find {
   position: absolute;
-  top: 8%;
+  top: 18%;
   left: 50%;
-  width: 7%;
+  width: 14%;
   height: auto;
   transform: translateX(-50%) translateY(-16px);
   z-index: 6;
@@ -996,9 +1015,9 @@ html, body {
 
 .game1-mission {
   position: absolute;
-  top: 9%;
+  top: 0;
   left: 50%;
-  width: 30.5%;
+  width: 32%;
   height: auto;
   transform: translateX(-50%);
   z-index: 5;
@@ -1184,9 +1203,9 @@ html, body {
 
 .story-talk1 {
   position: absolute;
-  top: 13%;
+  top: 18%;
   left: 50%;
-  width: 20%;
+  width: 15%;
   height: auto;
   transform: translate(-50%, -50%);
   opacity: 0;
@@ -1337,7 +1356,7 @@ html, body {
   position: absolute;
   top: 11%;
   left: 50%;
-  width: 34%;
+  width: 25%;
   height: auto;
   transform: translateX(-50%);
   opacity: 0;

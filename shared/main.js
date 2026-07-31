@@ -443,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- 도깨비 룰 설명 화면 ----------
   game4ChallengeButton.addEventListener("click", () => {
     console.log("도깨비 게임 시작");
-    changeScreen(game4PlayScreen);
+    changeScreen(game4PlayScreen, { animate: true });
   });
 
   // ---------- 도깨비 실제 게임 화면 (맞춤법 퀴즈) ----------
@@ -765,12 +765,10 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   const SPOTLIGHT_RADIUS_PERCENT = 11; // 손전등 반경 (화면 너비 대비 %)
-  const GS_HOLD_MS = 3000; // hidgs_2(밝아짐) 상태를 끊김 없이 유지해야 하는 시간
   const GS_SURPRISE_TO_FLEE_MS = 900; // 놀람(hidgs_3) -> 도망(hidgs_4)
   const GS_FLEE_TO_NEXT_MS = 900; // 도망 연출 후 다음 화면 전환까지
 
   let game2Found = false; // 그슨대를 이미 찾았는지 (중복 트리거 방지)
-  let gsHoldTimer = null; // 그슨대 영역을 계속 비추는 동안 유지되는 3초 타이머
 
   // 가짜 세모(item1~3)의 실제 파일명은 game2_hiditem1.png / _on.png 형태라
   // obj.type("item1")과 파일명 사이에 "hid" 접두어가 하나 더 붙는다.
@@ -799,8 +797,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function resetGame2() {
     game2Found = false;
-    clearTimeout(gsHoldTimer);
-    gsHoldTimer = null;
     game2Mission.classList.remove("is-hidden");
     game2MissionFind.classList.remove("is-visible");
     game2PlayScreen.style.setProperty("--x", "50%");
@@ -809,13 +805,12 @@ document.addEventListener("DOMContentLoaded", () => {
     buildGame2HiddenObjects();
   }
 
-  // hidgs_2(밝아짐) 상태를 GS_HOLD_MS(3초) 동안 끊김 없이 유지했을 때만
-  // 호출된다. 이후는 되돌릴 수 없는 '놀람(hidgs_3, 찾았다! 등장) -> 도망
-  // (hidgs_4)' 순서 연출로 넘어간다.
+  // 미션 문구(mission_game2_main.png)가 안내하는 대로, 손전등이 그슨대를
+  // 비추고 있는(hidgs_2) 상태에서 화면을 클릭하면 호출된다. 이후는 되돌릴
+  // 수 없는 '놀람(hidgs_3, 찾았다! 등장) -> 도망(hidgs_4)' 순서 연출로 넘어간다.
   function revealGeuseundae() {
     if (game2Found) return;
     game2Found = true;
-    gsHoldTimer = null;
 
     const gsEl = document.getElementById("game2-hidden-gs");
     gsEl.src = "asset/image/game2_hidgs_3.png";
@@ -834,10 +829,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 손전등 중심(px, 뷰포트 기준)과 각 요소 중심 사이 거리를 재서 반경 안에
-  // 들어왔는지 판정한다. 가짜 세모(item1~3)와 마찬가지로 그슨대도 반경을
-  // 드나들 때마다 즉시 hidgs_1 <-> hidgs_2(밝아짐)를 오간다. 다만 그슨대는
-  // hidgs_2 상태로 3초를 채우면 위 revealGeuseundae() 연출로 넘어가고,
-  // 3초를 채우기 전에 반경을 벗어나면 hidgs_1로 되돌아가며 타이머도 리셋된다.
+  // 들어왔는지 판정한다. 반경 안에 들어오면 hidgs_1 <-> hidgs_2(밝아짐,
+  // 가짜 세모는 _on)를 오간다. 미션 문구가 안내하는 "눌러 찾기"는 이 함수가
+  // 아니라 아래 click 리스너가 처리한다 — 여기서는 시각적 밝기 상태만 갱신한다.
   function updateGame2SpotlightHits(cursorX, cursorY, radiusPx) {
     if (game2Found) return;
 
@@ -852,27 +846,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const isLit = Math.hypot(cursorX - centerX, cursorY - centerY) <= radiusPx;
 
       const wasLit = el.dataset.lit === "true";
-
-      if (obj.type === "gs") {
-        if (isLit !== wasLit) {
-          el.dataset.lit = isLit ? "true" : "false";
-          el.src = `asset/image/game2_hidgs_${isLit ? "2" : "1"}.png`;
-          el.classList.toggle("is-lit", isLit);
-        }
-
-        if (isLit && !gsHoldTimer) {
-          gsHoldTimer = setTimeout(revealGeuseundae, GS_HOLD_MS);
-        } else if (!isLit && gsHoldTimer) {
-          clearTimeout(gsHoldTimer);
-          gsHoldTimer = null;
-        }
-        return;
-      }
-
       if (isLit === wasLit) return;
 
       el.dataset.lit = isLit ? "true" : "false";
-      el.src = getHiddenObjectSrc(obj.type, isLit);
+      el.src =
+        obj.type === "gs"
+          ? `asset/image/game2_hidgs_${isLit ? "2" : "1"}.png`
+          : getHiddenObjectSrc(obj.type, isLit);
       el.classList.toggle("is-lit", isLit);
     });
   }
@@ -888,6 +868,25 @@ document.addEventListener("DOMContentLoaded", () => {
     game2PlayScreen.style.setProperty("--radius", `${radiusPx}px`);
 
     updateGame2SpotlightHits(event.clientX, event.clientY, radiusPx);
+  });
+
+  // 미션 문구(mission_game2_main.png): "비슷한 세모들 사이에서 그슨대를
+  // 눌러 찾아주세요" — 손전등으로 비춘 뒤 "클릭"해야 다음 단계로 넘어가는
+  // 것이 원래 의도였는데, 기존 코드에는 클릭 리스너 자체가 없어 손전등을
+  // 3초간 움직이지 않고 버텨야만(그마저도 클릭 동작과 무관하게) 자동으로
+  // 통과되는 상태였다. 손전등이 그슨대를 비추고 있는 동안 클릭하면 바로
+  // 찾은 것으로 처리하도록 클릭 판정을 좌표 기반으로 새로 추가한다.
+  game2PlayScreen.addEventListener("click", (event) => {
+    if (game2Found) return;
+
+    const gsObj = HIDDEN_OBJECTS.find((obj) => obj.type === "gs");
+    const screenRect = game2PlayScreen.getBoundingClientRect();
+    const radiusPx = screenRect.width * (SPOTLIGHT_RADIUS_PERCENT / 100);
+    const centerX = screenRect.left + (gsObj.left / 100) * screenRect.width;
+    const centerY = screenRect.top + (gsObj.top / 100) * screenRect.height;
+    const isOnGs = Math.hypot(event.clientX - centerX, event.clientY - centerY) <= radiusPx;
+
+    if (isOnGs) revealGeuseundae();
   });
 
   // ---------- 야광귀 실제 게임 화면 ('짚신' 자모 조합) ----------
