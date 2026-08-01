@@ -33,6 +33,38 @@ html, body {
   z-index: 0;
 }
 
+/* ---------- 캐릭터 idle 모션(숨 쉬듯 은은한 스쿼시&스트레치) ----------
+   룰 설명 화면·클리어 스토리 화면에서 "캐릭터 + 말풍선"을 함께 감싸는
+   내부 wrapper(각 *-char-wrap의 자식)에 붙이는 공통 클래스. 캐릭터에만
+   붙이면 말풍선은 같이 안 흔들려서, 캐릭터와 말풍선을 하나로 묶는 div에
+   이 클래스를 걸고 그 안에 둘을 나란히 넣는 구조로 바꿨다.
+   position:relative + transform(에니메이션)이 있으면 이 요소가 자식인
+   말풍선(position:absolute)의 기준 박스가 되므로, 말풍선의 기존
+   top/left(%) 값은 그대로 둬도 캐릭터와 같은 상대 위치를 유지한 채
+   같이 움직인다. 바깥쪽 *-char-wrap은 화면 기준 위치(translateX(-50%)
+   등)만 담당하고, 이 안쪽 요소가 순수하게 스쿼시&스트레치만 담당하도록
+   책임을 분리했다 — 그래야 위치용 transform과 애니메이션용 transform이
+   서로 덮어쓰지 않는다.
+   scaleX/scaleY로 아주 미세하게 눌렸다 펴지는 모션을 주되
+   transform-origin을 bottom center로 고정해, 발이 바닥에 붙어 있고
+   몸통 위쪽만 눌렸다 펴지는 것처럼 보이게 한다.
+   튀는 느낌을 피하기 위해 오버슈트 없는 ease-in-out만 쓰고, 키프레임도
+   0%/50%/100% 세 단계로만 단순하게 구성했다. 회전(기우뚱)도 같은
+   타이밍으로 아주 살짝만 곁들여 하나의 모션처럼 자연스럽게 움직인다.
+   실제 게임 플레이 화면의 캐릭터에는 붙이지 않는다(게임 진행에
+   방해될 수 있어서 의도적으로 제외). */
+.char-idle-bounce {
+  position: relative;
+  transform-origin: bottom center;
+  animation: char-idle-bounce 2.8s ease-in-out infinite;
+}
+
+@keyframes char-idle-bounce {
+  0%   { transform: scale(1, 1) rotate(0deg); }
+  50%  { transform: scale(1.02, 0.97) rotate(0.8deg); }
+  100% { transform: scale(1, 1) rotate(0deg); }
+}
+
 /* ---------- 중앙 로고 + 시작 버튼 ---------- */
 
 .logo-typo {
@@ -448,11 +480,16 @@ html, body {
   opacity: 0;
 }
 
-.rule-talk {
+/* 말풍선(.yg-rule-talk)이 캐릭터와 함께 idle 모션을 타도록 .rule-talk를
+   화면 기준 절대 좌표 대신 .yg-rule-char-wrap 기준 상대 좌표(%)로
+   바꿨다 — 원래 화면 기준값(top:40.1%, left:22%, width:18.3%)을 wrap의
+   박스(bottom:7.96%, width:16.8%, 캐릭터 이미지 비율로 계산한 높이
+   기준) 안에서의 상대 위치로 환산한 값이다. */
+.yg-rule-talk {
   position: absolute;
-  top: 40.1%;
-  left: 22%;
-  width: 18.3%;
+  top: -28%;
+  left: -117%;
+  width: 109%;
   height: auto;
   z-index: 6;
   opacity: 0;
@@ -466,6 +503,26 @@ html, body {
   height: auto;
   transform: translateX(-50%);
   z-index: 5;
+}
+
+/* 룰 화면 캐릭터에 idle 바운스(.char-idle-bounce)를 걸려면 애니메이션이
+   transform을 통째로 갈아치우므로, 위치 잡기용 translateX(-50%)와
+   충돌한다. 다른 캐릭터들처럼 위치는 wrap에 맡기고 이미지 자체는
+   순수하게 채우기만 하도록 분리했다(.rule-character는 실제 게임 화면
+   #game1-play-screen에서 그대로 재사용하므로 건드리지 않는다). */
+.yg-rule-char-wrap {
+  position: absolute;
+  bottom: 7.96%;
+  left: 50%;
+  width: 16.8%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.yg-rule-character {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .rule-challenge-button {
@@ -498,7 +555,7 @@ html, body {
 
 /* is-playing 클래스가 붙는 순간 재생되는 등장 애니메이션.
    JS에서 클래스를 뗐다 다시 붙여 화면에 재진입할 때마다 처음부터 재생되게 한다. */
-#game1-rule-screen.is-playing .rule-talk {
+#game1-rule-screen.is-playing .yg-rule-talk {
   animation: rule-talk-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
 }
 
