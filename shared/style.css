@@ -146,7 +146,7 @@ html, body {
   position: absolute;
   top: 69%;
   left: 50%;
-  width: 23%;
+  width: 20%;
   transform: translate(-50%, -50%);
   background: none;
   border: none;
@@ -286,15 +286,15 @@ html, body {
 }
 
 .start-cloud--2 {
-  top: 88%;
+  top: 80%;
   left: 12%;
-  width: 12%;
+  width: 8%;
   animation: cloud-float-2 6.4s ease-in-out infinite;
   animation-delay: 1.2s;
 }
 
 .start-cloud--3 {
-  top: 13%;
+  top: 17%;
   left: 90%;
   width: 8%;
   animation: cloud-float-3 5.8s ease-in-out infinite;
@@ -302,7 +302,7 @@ html, body {
 }
 
 .start-cloud--4 {
-  top: 83%;
+  top: 85%;
   left: 62%;
   width: 8%;
   animation: cloud-float-4 6s ease-in-out infinite;
@@ -1371,6 +1371,58 @@ html, body {
   box-shadow: 0 0 10px 3px var(--dot-color, #fff);
   opacity: 0;
   animation: sparkle-dot-anim 0.26s ease-out forwards;
+}
+
+/* 엔딩 4장의 카드 완성 순간 터지는 폭죽 파티클. 정답 판정용 sparkle-burst와는
+   달리 입자 수가 많고 수명이 훨씬 길어서(1~1.5s + stagger) 별도 클래스로
+   분리했다: 발사 시점을 살짝 어긋내고, 모양(원/별)·크기(2~8px)·
+   색(카드색+화이트/골드)을 랜덤하게 섞는다. 실제 이동(등속 발사 + 중력 누적
+   포물선 → 회전 → 페이드아웃)은 입자마다 값이 달라 CSS 키프레임으로는
+   매끄럽게 표현하기 어려워 main.js에서 Web Animations API로 직접 계산한
+   좌표를 넘겨 재생한다(firework-core만 아래 keyframe을 그대로 쓴다). */
+.firework-burst {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.firework-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 13vh;
+  height: 13vh;
+  margin: -6.5vh 0 0 -6.5vh;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, var(--burst-color, #ffe08a) 40%, rgba(255, 240, 150, 0) 72%);
+  opacity: 0;
+  animation: firework-core-anim 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.firework-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: var(--particle-color, #fff);
+  box-shadow: 0 0 6px 2px var(--particle-color, #fff);
+  opacity: 0;
+}
+
+.firework-particle--dot {
+  border-radius: 50%;
+}
+
+.firework-particle--star {
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 61% 35%, 100% 50%, 61% 65%, 50% 100%, 39% 65%, 0% 50%, 39% 35%);
+}
+
+@keyframes firework-core-anim {
+  0% { opacity: 0; transform: scale(0.1); }
+  30% { opacity: 1; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(3); }
 }
 
 #game1-play-screen.is-shaking {
@@ -2463,7 +2515,7 @@ html, body {
     width: 20%;
   }
   .start-button {
-    width: 24%;
+    width: 21%;
   }
   .monster-wrap--tl {
     width: 16%;
@@ -2490,7 +2542,7 @@ html, body {
     width: 26%;
   }
   .start-button {
-    width: 30%;
+    width: 26%;
   }
   .monster-wrap--tl {
     width: 20%;

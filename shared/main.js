@@ -1178,6 +1178,93 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => burst.remove(), 400);
   }
 
+  // 파티클 하나의 이동 궤적을 실제 발사체 운동 공식으로 샘플링한 키프레임
+  // 배열로 만든다: x는 발사 초기 속도(dx)만큼 일정하게(등속), y는 초기 속도(dy)
+  // 성분에 중력 가속도 항(fall * t^2)이 서서히 누적되는 포물선으로 움직여서
+  // 방향이 꺾이는 구간 없이 부드럽게 이어진다. 회전(rot)도 같은 t로 선형
+  // 진행시켜 통째로 하나의 연속된 곡선을 이룬다.
+  function buildFireworkParticleFrames(dx, dy, fall, rotDeg) {
+    const STEPS = 20;
+    const frames = [];
+
+    for (let i = 0; i <= STEPS; i++) {
+      const t = i / STEPS;
+      const x = dx * t;
+      const y = dy * t + fall * t * t;
+      const rot = rotDeg * t;
+
+      let opacity;
+      if (t < 0.08) opacity = t / 0.08; // 등장
+      else if (t < 0.7) opacity = 1;
+      else opacity = 1 - (t - 0.7) / 0.3; // 서서히 페이드아웃
+
+      const scale = t < 0.3 ? 0.3 + 0.85 * (t / 0.3) : 1.15 - 0.65 * ((t - 0.3) / 0.7);
+
+      frames.push({
+        transform: `translate(${x.toFixed(2)}vh, ${y.toFixed(2)}vh) rotate(${rot.toFixed(1)}deg) scale(${scale.toFixed(2)})`,
+        opacity: Math.max(0, Math.min(1, opacity)),
+        offset: t,
+      });
+    }
+
+    return frames;
+  }
+
+  // 엔딩 4장의 카드 완성 순간 터지는 폭죽 스타일 파티클. createSparkleBurst는
+  // 정답 판정처럼 즉각적인 피드백용이라 짧게 끝나야 하지만, 이 이펙트는
+  // "훈민정음 28자모 완성!"과 함께 한 번만 크게 터지는 것이라 더 화려하고
+  // 오래 지속돼도 된다 — 그래서 별도 함수로 분리했다.
+  // 입자마다 발사 시점(delay)·크기·모양(원/별)·색(카드색+화이트/골드)을
+  // 랜덤하게 섞어 동시에 딱 맞춰 터지는 기계적인 느낌을 피한다.
+  function createEndingFirework(container, leftPercent, topPercent, cardColor) {
+    const PARTICLE_COUNT = 32;
+    const colors = [cardColor, "#ffffff", "#ffd76a"];
+
+    const burst = document.createElement("div");
+    burst.className = "firework-burst";
+    burst.style.left = `${leftPercent}%`;
+    burst.style.top = `${topPercent}%`;
+
+    const core = document.createElement("div");
+    core.className = "firework-core";
+    core.style.setProperty("--burst-color", cardColor);
+    burst.appendChild(core);
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const angle = (360 / PARTICLE_COUNT) * i + (Math.random() * 20 - 10); // 살짝 흩뿌려 자연스럽게
+      const radius = 20 + Math.random() * 16; // vh, 초기 발사 속도(등속 성분)의 크기
+      const rad = (angle * Math.PI) / 180;
+      const size = 2 + Math.random() * 6; // 2~8px, 크기를 균일하지 않게
+      const dx = Math.cos(rad) * radius;
+      const dy = Math.sin(rad) * radius;
+      const fall = 10 + Math.random() * 10; // 중력 가속도가 누적돼 추가로 떨어지는 거리
+      const rotDeg = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 360);
+
+      const particle = document.createElement("div");
+      const isStar = Math.random() < 0.4; // 일부만 별 모양으로 섞기
+      particle.className = `firework-particle ${isStar ? "firework-particle--star" : "firework-particle--dot"}`;
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.marginLeft = `${-size / 2}px`;
+      particle.style.marginTop = `${-size / 2}px`;
+      particle.style.setProperty("--particle-color", colors[Math.floor(Math.random() * colors.length)]);
+
+      const duration = 1000 + Math.random() * 500; // 1~1.5s
+      const delay = Math.random() * 250; // 발사 시점을 살짝 어긋내는 stagger
+      particle.animate(buildFireworkParticleFrames(dx, dy, fall, rotDeg), {
+        duration,
+        delay,
+        easing: "linear", // 곡선 자체는 이미 키프레임 샘플링에 담겨 있으므로 구간별로는 선형 보간
+        fill: "forwards",
+      });
+
+      burst.appendChild(particle);
+    }
+
+    container.appendChild(burst);
+    setTimeout(() => burst.remove(), 1900);
+  }
+
   // 조각의 화면상 중심 좌표(%)를 계산해 그 위치에 자모 고유 색으로 파티클을 띄운다.
   function spawnSparkle(piece, order) {
     const pieceRect = piece.getBoundingClientRect();
@@ -1657,9 +1744,9 @@ document.addEventListener("DOMContentLoaded", () => {
     changeScreen(endingCardsScreen, { animate: true });
 
     setTimeout(() => {
-      // 정답 파티클(createSparkleBurst)을 화면 중앙에 훨씬 크게 한 번
-      // 터뜨려 "훈민정음 28자모 완성!" 텍스트와 함께 등장하게 한다.
-      createSparkleBurst(endingCardsScreen, 50, 50, "#ffe08a", { scale: 3.2, dotCount: 24 });
+      // 폭죽 스타일 파티클(createEndingFirework)을 화면 중앙에 한 번 터뜨려
+      // "훈민정음 28자모 완성!" 텍스트와 함께 등장하게 한다.
+      createEndingFirework(endingCardsScreen, 50, 50, "#ffe08a");
     }, ENDING_GLOW_DELAY_MS);
   }
 
