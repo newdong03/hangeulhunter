@@ -9,7 +9,9 @@
 <body>
 
 <div class="screen" id="start-screen">
-  <img class="bg" src="asset/image/Background_step1.png" alt="배경">
+  <img class="bg" src="asset/image/Background_step1_back.png" alt="배경">
+
+  <img class="start-cloud-drift" src="asset/image/Background_step1_cloud.png" alt="">
 
   <div class="firefly-layer" id="start-firefly-layer"></div>
 
@@ -41,7 +43,9 @@
 </div>
 
 <div class="screen" id="character-screen" hidden>
-  <img class="bg" src="asset/image/Background_step1.png" alt="배경">
+  <img class="bg" src="asset/image/Background_step1_back.png" alt="배경">
+
+  <img class="start-cloud-drift" src="asset/image/Background_step1_cloud.png" alt="">
 
   <img class="logo-typo logo-typo--small" src="asset/image/logo_typo.png" alt="한글사냥꾼">
 
@@ -163,6 +167,12 @@
   <img class="jamo-piece jamo-6" data-order="6" data-letter="ㄴ" src="asset/image/game1_word6.png" alt="자모 ㄴ">
 
   <img class="rule-character" id="game1-character" src="asset/image/ms_yg_basic.png" alt="야광귀">
+
+  <div class="game1-hand-webcam-wrap" id="game1-hand-webcam-wrap" hidden>
+    <video class="game1-hand-webcam-video" id="game1-hand-webcam-video" autoplay playsinline muted></video>
+  </div>
+
+  <div class="game1-hand-cursor" id="game1-hand-cursor" hidden></div>
 </div>
 
 <div class="screen" id="yagwanggwi-story1-screen" hidden>
@@ -291,16 +301,16 @@
   <img class="game4-quiz-mission" src="asset/image/mission_game4.png" alt="올바른 맞춤법을 골라줘! 아픈 도깨비에게 해줄 수 있는 말을 골라주세요">
 
   <div class="dk-quiz-char-wrap">
-    <img class="dk-quiz-character" src="asset/image/ms_dk_sick.png" alt="도깨비">
-    <img class="dk-quiz-talk" src="asset/image/talk_dk_quiz.png" alt="나 너무 아파">
+    <img class="dk-quiz-character" id="game4-quiz-character" src="asset/image/ms_dk_sick.png" alt="도깨비">
+    <img class="dk-quiz-talk" id="game4-quiz-talk" src="asset/image/talk_dk_quiz.png" alt="나 너무 아파">
   </div>
 
   <button class="game4-quiz-option game4-quiz-option--a" id="game4-quiz-a" type="button">
-    <img src="asset/image/game4_quizA.png" alt="어서 빨리 나아!">
+    <img id="game4-quiz-a-img" src="asset/image/game4_quizA.png" alt="어서 빨리 나아!">
   </button>
 
   <button class="game4-quiz-option game4-quiz-option--b" id="game4-quiz-b" type="button">
-    <img src="asset/image/game4_quizB.png" alt="어서 빨리 낳아!">
+    <img id="game4-quiz-b-img" src="asset/image/game4_quizB.png" alt="어서 빨리 낳아!">
   </button>
 </div>
 
@@ -309,7 +319,7 @@
 
   <div class="game4-story1-char-wrap" id="game4-story1-char-wrap">
     <div class="char-idle-bounce">
-      <img class="game4-story1-character" src="asset/image/ms_dk_basic.png" alt="도깨비">
+      <img class="game4-story1-character" src="asset/image/ms_dk_surprise.png" alt="도깨비">
       <img class="game4-story1-talk" src="asset/image/talk_dk_story.png" alt="대단한걸? '여린히읗'을 돌려줄게">
     </div>
   </div>
@@ -333,7 +343,7 @@
 </div>
 
 <div class="screen" id="ending-cards-screen" hidden>
-  <img class="bg" src="asset/image/Background_step3.png" alt="배경">
+  <img class="bg" src="asset/image/Background_step3_clean.png" alt="배경">
 
   <div class="ending-card-row" id="ending-card-row">
     <div class="ending-card ending-card--1">
@@ -358,7 +368,7 @@
 </div>
 
 <div class="screen" id="ending-greeting-screen" hidden>
-  <img class="bg" src="asset/image/Background_step3.png" alt="배경">
+  <img class="bg" src="asset/image/Background_step3_clean.png" alt="배경">
 
   <img class="ending-greeting-title" src="asset/image/ending_talk_image.png" alt="요괴들의 인사">
 
@@ -429,6 +439,28 @@
   </div>
 </div>
 
+<div class="screen" id="qr-screen" hidden>
+  <img class="bg" src="asset/image/Background_step1.png" alt="배경">
+
+  <div class="qr-loading" id="qr-loading">
+    <div class="qr-spinner"></div>
+    <p class="qr-loading-text">사진을 업로드하는 중이에요...</p>
+  </div>
+
+  <div class="qr-panel" id="qr-panel" hidden>
+    <div class="qr-code-box" id="qr-code-box"></div>
+    <p class="qr-caption">이 QR을 스캔해서 사진을 받아가세요</p>
+  </div>
+
+  <div class="qr-error" id="qr-error" hidden></div>
+
+  <button class="qr-home-button" id="qr-home-button" type="button">
+    <img src="asset/image/button_home.png" alt="처음으로">
+  </button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 <script src="shared/main.js"></script>
 </body>
 </html>

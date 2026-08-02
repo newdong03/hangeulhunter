@@ -20,6 +20,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const game4PlayScreen = document.getElementById("game4-play-screen");
   const game4QuizAButton = document.getElementById("game4-quiz-a");
   const game4QuizBButton = document.getElementById("game4-quiz-b");
+  const game4QuizCharacter = document.getElementById("game4-quiz-character");
+  const game4QuizTalk = document.getElementById("game4-quiz-talk");
+  const game4QuizAImg = document.getElementById("game4-quiz-a-img");
+  const game4QuizBImg = document.getElementById("game4-quiz-b-img");
   const game3Character = document.getElementById("game3-character");
   const game3DropLayer = document.getElementById("game3-drop-layer");
   const game3CountBox = document.getElementById("game3-count");
@@ -38,6 +42,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const current = getVisibleScreen();
     if (current === webcamScreen && screen !== webcamScreen) {
       stopWebcamStream();
+    }
+    // 야광귀 게임 화면을 벗어날 때도 손가락 인식 카메라를 확실히 끈다
+    // (stopGame1HandTracking은 더 아래에서 선언되지만, 실제 호출은 항상
+    // 그 선언이 끝난 뒤에 일어나므로 문제없다).
+    if (current === game1PlayScreen && screen !== game1PlayScreen) {
+      stopGame1HandTracking();
     }
 
     screens.forEach((s) => {
@@ -482,6 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("야광귀 게임 시작");
     resetGame1();
     changeScreen(game1PlayScreen);
+    startGame1HandTracking();
   });
 
   // ---------- 그슨대 룰 설명 화면 ----------
@@ -501,31 +512,111 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- 도깨비 룰 설명 화면 ----------
   game4ChallengeButton.addEventListener("click", () => {
     console.log("도깨비 게임 시작");
+    resetGame4Quiz();
     changeScreen(game4PlayScreen, { animate: true });
   });
 
-  // ---------- 도깨비 실제 게임 화면 (맞춤법 퀴즈) ----------
+  // ---------- 도깨비 실제 게임 화면 (맞춤법 퀴즈, 3문제) ----------
+
+  // 문제별 데이터만 바뀌고 화면 구조(캐릭터/말풍선/선택지 2개)는 그대로
+  // 재사용한다 — game4QuizIndex가 지금 몇 번째 문제인지를 가리킨다.
+  const GAME4_QUIZZES = [
+    {
+      character: "ms_dk_sick",
+      talk: "talk_dk_quiz",
+      talkAlt: "나 너무 아파",
+      optionAImg: "game4_quizA",
+      optionAAlt: "어서 빨리 나아!",
+      optionBImg: "game4_quizB",
+      optionBAlt: "어서 빨리 낳아!",
+      correct: "a",
+    },
+    {
+      character: "ms_dk_fly",
+      talk: "talk_dk_quiz2",
+      talkAlt: "도깨비 대사",
+      optionAImg: "game4_quizA_2",
+      optionAAlt: "선택지 A",
+      optionBImg: "game4_quizB_2",
+      optionBAlt: "선택지 B",
+      correct: "b",
+    },
+    {
+      character: "ms_dk_basic",
+      talk: "talk_dk_quiz3",
+      talkAlt: "도깨비 대사",
+      optionAImg: "game4_quizA_3",
+      optionAAlt: "선택지 A",
+      optionBImg: "game4_quizB_3",
+      optionBAlt: "선택지 B",
+      correct: "a",
+    },
+  ];
+
+  let game4QuizIndex = 0;
+
+  function loadGame4Quiz(index) {
+    const quiz = GAME4_QUIZZES[index];
+    game4QuizCharacter.src = `asset/image/${quiz.character}.png`;
+    game4QuizTalk.src = `asset/image/${quiz.talk}.png`;
+    game4QuizTalk.alt = quiz.talkAlt;
+    game4QuizAImg.src = `asset/image/${quiz.optionAImg}.png`;
+    game4QuizAImg.alt = quiz.optionAAlt;
+    game4QuizBImg.src = `asset/image/${quiz.optionBImg}.png`;
+    game4QuizBImg.alt = quiz.optionBAlt;
+  }
+
+  function resetGame4Quiz() {
+    game4QuizIndex = 0;
+    loadGame4Quiz(game4QuizIndex);
+  }
+
+  function handleGame4Answer(choice) {
+    const quiz = GAME4_QUIZZES[game4QuizIndex];
+    if (choice === quiz.correct) {
+      handleGame4Correct();
+    } else {
+      handleGame4Wrong();
+    }
+  }
 
   function handleGame4Correct() {
-    console.log("정답! 여린히읗 획득 스토리 화면으로 이동");
-    goToGame4Clear();
+    game4QuizIndex += 1;
+
+    if (game4QuizIndex >= GAME4_QUIZZES.length) {
+      console.log("도깨비 퀴즈 3문제 모두 정답! 여린히읗 획득 스토리 화면으로 이동");
+      goToGame4Clear();
+      return;
+    }
+
+    console.log(`정답! ${game4QuizIndex + 1}번째 문제로 이동`);
+    loadGame4Quiz(game4QuizIndex);
+    // 캐릭터+말풍선이 먼저, 선택지가 그다음 등장하는 기존 등장 연출을
+    // 문제가 바뀔 때마다 재사용한다(화면 자체는 그대로 유지되므로 여기서
+    // 직접 재생시켜준다).
+    playEntryAnimation(game4PlayScreen);
   }
 
   // 오답 연출은 야광귀 게임의 handleWrongJamo()와 동일한 기법(화면 흔들림
-  // 클래스를 뗐다 리플로우 후 다시 붙이기)을 재사용한다. 다시 선택할 수
-  // 있도록 화면 전환 없이 그대로 유지한다.
+  // 클래스를 뗐다 리플로우 후 다시 붙이기)을 재사용하고, 불가살이 게임의
+  // 붉은 화면 플래시(is-fire-hit)도 함께 재사용한다. 다시 선택할 수 있도록
+  // 화면 전환 없이 같은 문제를 그대로 유지한다.
   function handleGame4Wrong() {
     game4PlayScreen.classList.remove("is-shaking");
     void game4PlayScreen.offsetWidth;
     game4PlayScreen.classList.add("is-shaking");
+
+    game4PlayScreen.classList.remove("is-fire-hit");
+    void game4PlayScreen.offsetWidth;
+    game4PlayScreen.classList.add("is-fire-hit");
   }
 
   function goToGame4Clear() {
     goToGame4Story1();
   }
 
-  game4QuizAButton.addEventListener("click", handleGame4Correct);
-  game4QuizBButton.addEventListener("click", handleGame4Wrong);
+  game4QuizAButton.addEventListener("click", () => handleGame4Answer("a"));
+  game4QuizBButton.addEventListener("click", () => handleGame4Answer("b"));
 
   // ---------- 불가살이 실제 게임 화면 (쇠 받기) ----------
 
@@ -1111,19 +1202,215 @@ document.addEventListener("DOMContentLoaded", () => {
     flashCharacterFace("sad");
   }
 
-  jamoPieces.forEach((piece) => {
-    piece.addEventListener("click", () => {
-      const neededLetter = JIPSIN_LETTERS[jipsinProgress];
-      const isMatchingLetter = piece.dataset.letter === neededLetter;
+  // 클릭이든 손가락 dwell이든, 최종 선택 판정은 이 함수 하나로 모은다.
+  // 정답/오답 처리(handleCorrectJamo/handleWrongJamo)는 완전히 동일하게
+  // 유지하고 "무엇이 이 함수를 호출했는가"만 다르다.
+  function attemptSelectJamoPiece(piece) {
+    const neededLetter = JIPSIN_LETTERS[jipsinProgress];
+    const isMatchingLetter = piece.dataset.letter === neededLetter;
 
-      if (piece.classList.contains("is-used") || !isMatchingLetter) {
-        handleWrongJamo();
+    if (piece.classList.contains("is-used") || !isMatchingLetter) {
+      handleWrongJamo();
+      return;
+    }
+
+    handleCorrectJamo(piece);
+  }
+
+  jamoPieces.forEach((piece) => {
+    piece.addEventListener("click", () => attemptSelectJamoPiece(piece));
+  });
+
+  // ---------- 야광귀 게임: 손가락 인식(핸드트래킹) ----------
+  // MediaPipe Hands로 검지손가락 끝(landmark 8, INDEX_FINGER_TIP)을 추적해
+  // 화면 위 원형 커서를 움직이고, 커서가 자모 조각 위에 일정 시간
+  // (GAME1_DWELL_MS) 이상 머무르면 attemptSelectJamoPiece를 호출해 클릭과
+  // 완전히 동일한 선택 로직을 태운다. 카메라 권한이 없거나 MediaPipe
+  // 로딩이 실패해도 위의 클릭 리스너는 그대로 살아있으므로 마우스로 계속
+  // 플레이할 수 있다(폴백) — 이 블록은 순전히 "부가 입력 수단"만 얹는다.
+
+  const game1HandWebcamWrap = document.getElementById("game1-hand-webcam-wrap");
+  const game1HandWebcamVideo = document.getElementById("game1-hand-webcam-video");
+  const game1HandCursor = document.getElementById("game1-hand-cursor");
+
+  const GAME1_DWELL_MS = 400; // 손가락 커서가 조각 위에 머물러야 선택되는 시간
+  const GAME1_DWELL_COOLDOWN_MS = 900; // 선택(정답/오답) 직후 같은 자리 재입력을 잠깐 막는 시간
+  const GAME1_CURSOR_SMOOTHING = 0.35; // 클수록 손가락 움직임을 빠르게 따라간다(0~1)
+
+  let game1HandStream = null;
+  let game1HandsInstance = null;
+  let game1HandTrackingActive = false;
+  let game1HandFrameRequestId = null;
+  let game1CursorSmoothX = null;
+  let game1CursorSmoothY = null;
+  let game1DwellTarget = null;
+  let game1DwellStartMs = null;
+  let game1DwellCooldownUntilMs = 0;
+
+  function setGame1CursorDwell(percent) {
+    game1HandCursor.style.setProperty("--dwell", String(percent));
+  }
+
+  function updateGame1CursorPosition(xPx, yPx) {
+    if (game1CursorSmoothX === null) {
+      game1CursorSmoothX = xPx;
+      game1CursorSmoothY = yPx;
+    } else {
+      game1CursorSmoothX += (xPx - game1CursorSmoothX) * GAME1_CURSOR_SMOOTHING;
+      game1CursorSmoothY += (yPx - game1CursorSmoothY) * GAME1_CURSOR_SMOOTHING;
+    }
+    game1HandCursor.style.transform = `translate(${game1CursorSmoothX}px, ${game1CursorSmoothY}px)`;
+  }
+
+  // 커서의 뷰포트 좌표(xPx,yPx)가 아직 안 쓴 자모 조각 위에 있는지 검사하고,
+  // 같은 조각 위에 GAME1_DWELL_MS 이상 머무르면 클릭한 것과 동일하게 처리한다.
+  function checkGame1Dwell(xPx, yPx) {
+    const now = performance.now();
+    if (now < game1DwellCooldownUntilMs) {
+      setGame1CursorDwell(0);
+      return;
+    }
+
+    let hovered = null;
+    jamoPieces.forEach((piece) => {
+      if (hovered || piece.classList.contains("is-used")) return;
+      const rect = piece.getBoundingClientRect();
+      if (xPx >= rect.left && xPx <= rect.right && yPx >= rect.top && yPx <= rect.bottom) {
+        hovered = piece;
+      }
+    });
+
+    if (hovered !== game1DwellTarget) {
+      game1DwellTarget = hovered;
+      game1DwellStartMs = hovered ? now : null;
+    }
+
+    if (!hovered) {
+      setGame1CursorDwell(0);
+      return;
+    }
+
+    const elapsed = now - game1DwellStartMs;
+    setGame1CursorDwell(Math.min(100, (elapsed / GAME1_DWELL_MS) * 100));
+
+    if (elapsed >= GAME1_DWELL_MS) {
+      game1DwellTarget = null;
+      game1DwellStartMs = null;
+      game1DwellCooldownUntilMs = now + GAME1_DWELL_COOLDOWN_MS;
+      setGame1CursorDwell(0);
+      attemptSelectJamoPiece(hovered);
+    }
+  }
+
+  function onGame1HandResults(results) {
+    if (!game1HandTrackingActive) return;
+
+    const hand = results.multiHandLandmarks && results.multiHandLandmarks[0];
+    if (!hand) {
+      game1HandCursor.hidden = true;
+      game1DwellTarget = null;
+      game1DwellStartMs = null;
+      setGame1CursorDwell(0);
+      return;
+    }
+
+    const tip = hand[8]; // 검지손가락 끝(INDEX_FINGER_TIP)
+    const screenRect = game1PlayScreen.getBoundingClientRect();
+    const mirroredX = 1 - tip.x; // 미러링된 미리보기와 같은 방향으로 움직이도록 좌우 반전
+    const viewportX = screenRect.left + mirroredX * screenRect.width;
+    const viewportY = screenRect.top + tip.y * screenRect.height;
+
+    game1HandCursor.hidden = false;
+    updateGame1CursorPosition(viewportX - screenRect.left, viewportY - screenRect.top);
+    checkGame1Dwell(viewportX, viewportY);
+  }
+
+  async function game1HandFrameLoop() {
+    if (!game1HandTrackingActive || !game1HandsInstance) return;
+
+    try {
+      await game1HandsInstance.send({ image: game1HandWebcamVideo });
+    } catch (error) {
+      console.log("[야광귀 손가락 인식] 프레임 처리 중 오류:", error);
+    }
+
+    if (game1HandTrackingActive) {
+      game1HandFrameRequestId = requestAnimationFrame(game1HandFrameLoop);
+    }
+  }
+
+  async function startGame1HandTracking() {
+    if (game1HandTrackingActive) return; // 이미 실행 중이면 중복 시작 방지
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof Hands === "undefined") {
+      console.log("[야광귀 손가락 인식] 카메라 API 또는 MediaPipe Hands를 사용할 수 없어요 - 마우스 클릭으로 계속 플레이할 수 있습니다.");
+      return;
+    }
+
+    try {
+      game1HandStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+
+      // 권한 대기 중에 이미 다른 화면으로 이동했다면 스트림만 정리한다.
+      if (game1PlayScreen.hidden) {
+        game1HandStream.getTracks().forEach((track) => track.stop());
+        game1HandStream = null;
         return;
       }
 
-      handleCorrectJamo(piece);
-    });
-  });
+      game1HandWebcamVideo.srcObject = game1HandStream;
+      try {
+        await game1HandWebcamVideo.play();
+      } catch (playError) {
+        console.log("[야광귀 손가락 인식] video.play() 실패(무시 가능):", playError);
+      }
+      game1HandWebcamWrap.hidden = false;
+
+      game1HandsInstance = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+      game1HandsInstance.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.5,
+      });
+      game1HandsInstance.onResults(onGame1HandResults);
+
+      game1HandTrackingActive = true;
+      console.log("[야광귀 손가락 인식] 카메라 준비 완료, 추적 시작");
+      game1HandFrameLoop();
+    } catch (error) {
+      console.log("[야광귀 손가락 인식] 카메라 접근 실패 - 마우스 클릭으로 계속 플레이할 수 있습니다:", error);
+      game1HandWebcamWrap.hidden = true;
+    }
+  }
+
+  function stopGame1HandTracking() {
+    game1HandTrackingActive = false;
+
+    if (game1HandFrameRequestId) {
+      cancelAnimationFrame(game1HandFrameRequestId);
+      game1HandFrameRequestId = null;
+    }
+    if (game1HandsInstance) {
+      game1HandsInstance.close();
+      game1HandsInstance = null;
+    }
+    if (game1HandStream) {
+      game1HandStream.getTracks().forEach((track) => track.stop());
+      game1HandStream = null;
+    }
+
+    game1HandWebcamVideo.srcObject = null;
+    game1HandWebcamWrap.hidden = true;
+    game1HandCursor.hidden = true;
+
+    game1CursorSmoothX = null;
+    game1CursorSmoothY = null;
+    game1DwellTarget = null;
+    game1DwellStartMs = null;
+    setGame1CursorDwell(0);
+  }
 
   // ---------- 야광귀 클리어 스토리 연출 ----------
 
@@ -1576,7 +1863,78 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   photoStoreButton.addEventListener("click", () => {
-    // TODO: QR 변환/저장 로직은 다음 단계에서 별도로 연결
-    console.log("QR 저장 로직 연결 예정");
+    uploadPhotoAndShowQr();
+  });
+
+  // ---------- 엔딩: QR 코드 화면 ----------
+
+  const qrScreen = document.getElementById("qr-screen");
+  const qrLoading = document.getElementById("qr-loading");
+  const qrPanel = document.getElementById("qr-panel");
+  const qrCodeBox = document.getElementById("qr-code-box");
+  const qrError = document.getElementById("qr-error");
+  const qrHomeButton = document.getElementById("qr-home-button");
+
+  const IMGBB_API_KEY = "80075c1d7994d3c3d381ebfb7a2280ca";
+  const IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload";
+  const QR_CODE_PIXEL_SIZE = 320; // .qr-code-box(CSS)가 화면 크기에 맞춰 이 값을 다시 스케일해서 보여준다
+
+  // 로딩 / 성공(QR) / 실패, 이 세 상태 중 하나만 보이도록 나머지를 hidden 처리한다.
+  function setQrScreenState(state) {
+    qrLoading.hidden = state !== "loading";
+    qrPanel.hidden = state !== "success";
+    qrError.hidden = state !== "error";
+  }
+
+  async function uploadPhotoAndShowQr() {
+    changeScreen(qrScreen, { animate: true });
+    setQrScreenState("loading");
+    qrCodeBox.innerHTML = ""; // 이전에 그려둔 QR이 남아있지 않도록 초기화
+
+    if (!capturedPhotoDataUrl) {
+      console.error("[QR] 업로드할 캡처 이미지가 없습니다.");
+      qrError.textContent = "업로드할 사진이 없어요.\n사진을 다시 촬영해주세요.";
+      setQrScreenState("error");
+      return;
+    }
+
+    try {
+      // "data:image/png;base64,AAAA..." 에서 base64 본문만 잘라 imgbb에 보낸다.
+      const base64Data = capturedPhotoDataUrl.split(",")[1];
+
+      const formData = new FormData();
+      formData.append("key", IMGBB_API_KEY);
+      formData.append("image", base64Data);
+
+      const response = await fetch(IMGBB_UPLOAD_URL, { method: "POST", body: formData });
+      const result = await response.json();
+      console.log("[QR] imgbb 업로드 응답:", result);
+
+      if (!response.ok || !result.success) {
+        const message = (result && result.error && result.error.message) || `업로드 실패(status ${response.status})`;
+        throw new Error(message);
+      }
+
+      const imageUrl = result.data.url;
+      console.log("[QR] 업로드 성공 - 이미지 URL:", imageUrl);
+
+      // QRCode는 index.html에서 불러온 qrcodejs(cdnjs) 라이브러리가 전역으로 제공한다.
+      new QRCode(qrCodeBox, {
+        text: imageUrl,
+        width: QR_CODE_PIXEL_SIZE,
+        height: QR_CODE_PIXEL_SIZE,
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+
+      setQrScreenState("success");
+    } catch (error) {
+      console.error("[QR] 사진 업로드/QR 생성 중 오류:", error);
+      qrError.textContent = "사진을 업로드하는 중 문제가 생겼어요.\n네트워크 연결을 확인하고 다시 시도해주세요.";
+      setQrScreenState("error");
+    }
+  }
+
+  qrHomeButton.addEventListener("click", () => {
+    goHomeScreen();
   });
 });

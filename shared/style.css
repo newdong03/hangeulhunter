@@ -33,6 +33,41 @@ html, body {
   z-index: 0;
 }
 
+/* ---------- 시작화면 구름 레이어 ----------
+   Background_step1_cloud.png(7763x909)는 가로로 매우 긴 구름 패턴이라,
+   다른 배경 이미지들과 같은 1920px 기준으로 폭을 맞추면(7763/1920 ≈
+   404.32%) 화면보다 훨씬 넓어진다. 왼쪽 끝에서 시작해 오른쪽 끝(이미지의
+   나머지가 다 드러나는 지점, 즉 -304.32%)까지 아주 천천히 이동했다가
+   같은 속도로 되돌아오는 왕복(ping-pong) 애니메이션은 animation-direction:
+   alternate로 구현한다 — 매 왕복마다 새로 시작하지 않고 자연스럽게
+   방향만 반전되어 이어진다. 그라데이션 배경(.bg, z-index:0)보다는
+   위, 캐릭터/로고/버튼(z-index:5, 10)보다는 아래에 오도록 배치한다. */
+.start-cloud-drift {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 404.32%;
+  height: auto;
+  z-index: 1;
+  pointer-events: none;
+  animation: start-cloud-drift 70s ease-in-out infinite alternate;
+}
+
+/* translateX(%)는 화면이 아니라 "이 요소 자신의 너비" 기준으로 계산된다.
+   요소 자체가 화면의 404.32%만큼 넓으므로, 이미지 오른쪽 끝을 화면
+   오른쪽 끝에 정확히 맞추려면 (화면폭 - 요소폭) / 요소폭 = (100 - 404.32)
+   / 404.32 ≈ -75.27%만큼만 이동하면 된다. 예전에 화면 기준으로 계산한
+   -304.32%를 그대로 썼더니 실제 필요한 거리의 4배 넘게 움직여서
+   체감 속도가 훨씬 빨라 보였다. */
+@keyframes start-cloud-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-75.27%);
+  }
+}
+
 /* ---------- 캐릭터 idle 모션(숨 쉬듯 은은한 스쿼시&스트레치) ----------
    룰 설명 화면·클리어 스토리 화면에서 "캐릭터 + 말풍선"을 함께 감싸는
    내부 wrapper(각 *-char-wrap의 자식)에 붙이는 공통 클래스. 캐릭터에만
@@ -69,9 +104,9 @@ html, body {
 
 .logo-typo {
   position: absolute;
-  top: 41%;
+  top: 40%;
   left: 50%;
-  width: 28%;
+  width: 26%;
   height: auto;
   transform: translate(-50%, -50%);
   z-index: 10;
@@ -79,9 +114,9 @@ html, body {
 
 .start-button {
   position: absolute;
-  top: 68%;
+  top: 69%;
   left: 50%;
-  width: 25%;
+  width: 23%;
   transform: translate(-50%, -50%);
   background: none;
   border: none;
@@ -477,11 +512,19 @@ html, body {
 
 /* ---------- 야광귀 룰 설명 화면 ---------- */
 
+/* 4개 룰 화면(mission_game1/2/3/4_story.png)은 전부 배경 없이 텍스트만
+   찍힌 이미지라 CSS font-size가 통하지 않는다 — 대신 이미지마다 "캔버스
+   대비 실제 글자 높이" 비율이 달라서(각 PNG의 여백 비율이 제각각),
+   같은 width%를 줘도 화면에 찍히는 글자 크기가 이미지마다 달랐다.
+   각 PNG의 텍스트 영역을 실측(투명이 아닌 픽셀의 세로 범위 ÷ 이미지
+   가로폭)해 나온 비율로, 4개 화면 모두 같은 실제 글자 높이가 나오도록
+   화면별 width를 역산해서 맞췄다(아래 #game1~4-rule-screen 스코프 참고).
+   .rule-mission 자체는 야광귀(game1) 기준값이다. */
 .rule-mission {
   position: absolute;
   top: 13.4%;
   left: 50%;
-  width: 30.3%;
+  width: 30%;
   height: auto;
   transform: translateX(-50%);
   z-index: 5;
@@ -629,6 +672,13 @@ html, body {
   animation: rule-talk-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
 }
 
+/* mission_game2.png는 텍스트 대비 캔버스 여백이 네 이미지 중 가장 넓어서
+   공용 .rule-mission 크기(30%) 그대로 두면 글자가 가장 작게 보인다.
+   실측 비율에 맞춰 이 화면에서만 키운다. */
+#game2-rule-screen .rule-mission {
+  width: 32.9%;
+}
+
 #game2-rule-screen.is-playing .rule-mission {
   animation: rule-fade-in 0.7s ease-out 0.25s forwards;
 }
@@ -643,12 +693,11 @@ html, body {
    wrap의 자식으로 넣고 wrap 기준 상대 좌표(%)로 배치해 항상 캐릭터
    왼쪽에 붙어 있도록 한다(5.game3_0.png 시안 실측 좌표 기준 배치,
    화면 보며 미세 조정 가능). */
-/* mission_game3.png는 다른 두 룰 화면의 미션 이미지보다 텍스트 주변
-   여백이 많아서 공용 .rule-mission 크기(30.3%) 그대로 두면 유독 작아
-   보인다. 다른 룰 화면(야광귀/그슨대)에는 영향 없이 이 화면에서만
-   키우기 위해 화면 ID로 스코프해서 덮어쓴다. */
+/* mission_game3.png는 텍스트 대비 캔버스 여백이 네 이미지 중 가장 좁아서
+   공용 .rule-mission 크기(30%) 그대로 두면 다른 화면보다 글자가 크게
+   보인다. 실측 비율에 맞춰 이 화면에서만 줄인다. */
 #game3-rule-screen .rule-mission {
-  width: 44%;
+  width: 28.6%;
 }
 
 .bs-rule-char-wrap {
@@ -668,8 +717,8 @@ html, body {
 
 .bs-rule-talk {
   position: absolute;
-  top: -36%;
-  left: -112%;
+  top: -20%;
+  left: -95%;
   width: 92%;
   height: auto;
   z-index: 6;
@@ -713,8 +762,8 @@ html, body {
 
 .dk-rule-talk {
   position: absolute;
-  top: -36%;
-  left: -112%;
+  top: -20%;
+  left: -95%;
   width: 92%;
   height: auto;
   z-index: 6;
@@ -725,11 +774,11 @@ html, body {
   animation: rule-talk-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
 }
 
-/* mission_game4_story.png도 mission_game3.png와 같은 이유로 텍스트 주변
-   여백이 많아서 공용 .rule-mission 크기(30.3%) 그대로 두면 다른 룰
-   화면보다 작아 보인다. 이 화면에서만 스코프해서 키운다. */
+/* mission_game4_story.png도 mission_game3.png와 같은 이유로(텍스트 대비
+   캔버스 여백이 좁음) 공용 크기(30%) 그대로 두면 다른 화면보다 글자가
+   크게 보인다. 이 화면에서만 스코프해서 줄인다. */
 #game4-rule-screen .rule-mission {
-  width: 38%;
+  width: 28.4%;
 }
 
 #game4-rule-screen.is-playing .rule-mission {
@@ -800,19 +849,24 @@ html, body {
   transform: translateX(-50%) scale(0.96);
 }
 
-/* 캐릭터와 말풍선의 공통 부모. 다른 화면들과 동일한 패턴 — 말풍선을
-   wrap의 자식으로 넣어 상대 좌표로 배치한다. ms_dk_sick.png 한 장에
-   캐릭터와 링거 거치대가 함께 그려져 있어 별도 요소 없이 이미지 하나로
-   처리한다.
-   선택지 카드 폭을 25%로 줄여 생긴 가운데 여백 안에서 캐릭터/말풍선을
-   15%->17%로 키웠다(선택지·캐릭터·말풍선 서로 4%p 이상 여백 확보 확인).
-   화면 진입 시 이 캐릭터/말풍선이 먼저 나타나고, 그 다음 선택지가
-   나타나도록 is-playing 트리거의 애니메이션 딜레이를 선택지보다 짧게 둔다. */
+/* 캐릭터와 말풍선의 공통 부모. 세 문제(ms_dk_sick/ms_dk_fly/ms_dk_basic)가
+   서로 다른 원본 비율(가로세로)을 가진 이미지라, 예전처럼 width만 고정하고
+   height:auto로 두면 이미지마다 박스 높이가 제각각 달라져 문제마다 레이아웃이
+   흔들렸다(특히 세로로 긴 ms_dk_fly가 위쪽 옵션 자리까지 밀고 올라옴).
+   aspect-ratio로 래퍼 박스 자체를 고정 크기로 못박고, 안의 이미지는
+   object-fit:contain으로 그 안에 맞춰 넣어서 어떤 캐릭터가 와도 박스
+   크기·위치가 완전히 동일하게 유지되도록 했다.
+   캐릭터+말풍선은 화면 세로 기준으로는 답변 선택지(top:27%~63.4%)와
+   겹치는 범위에 있지만, 선택지가 좌우로 갈라져 있고(11.5%~36.5% /
+   63.5%~88.5%) 캐릭터+말풍선은 그 사이 중앙 통로(대략 36.5%~63.5%)에만
+   있어서 실제로는 겹치지 않는다 — 그래서 이 중앙 통로 폭 안에서는
+   세로 위치와 무관하게 자유롭게 키울 수 있다. */
 .dk-quiz-char-wrap {
   position: absolute;
-  bottom: 3%;
+  bottom: 4%;
   left: 51%;
-  width: 17%;
+  width: 15.5%;
+  aspect-ratio: 1 / 1;
   transform: translateX(-50%);
   z-index: 4;
   opacity: 0;
@@ -825,14 +879,20 @@ html, body {
 .dk-quiz-character {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
 }
 
+/* 말풍선 이미지(talk_dk_quiz*.png)는 세 문제 모두 원본 비율이 동일하지만,
+   혹시 다른 비율의 이미지로 바뀌어도 레이아웃이 흔들리지 않도록 이 박스도
+   aspect-ratio로 고정해 둔다. bottom을 128%->112%로 낮춰 캐릭터 머리와의
+   간격도 좁혔다. */
 .dk-quiz-talk {
   position: absolute;
-  top: -78%;
-  left: 10%;
-  width: 76%;
+  bottom: 102%;
+  left: 6%;
+  width: 88%;
+  aspect-ratio: 259 / 187;
   height: auto;
   z-index: 6;
 }
@@ -841,6 +901,18 @@ html, body {
    game1-shake 키프레임을 그대로 재사용한다. */
 #game4-play-screen.is-shaking {
   animation: game1-shake 0.35s ease-in-out;
+}
+
+/* 화면이 붉게 물들었다가 돌아오는 연출도 불가살이 게임(is-fire-hit,
+   game3-fire-flash 키프레임)을 그대로 재사용한다. */
+#game4-play-screen.is-fire-hit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(220, 40, 30, 0.4);
+  z-index: 12;
+  pointer-events: none;
+  animation: game3-fire-flash 0.5s ease-out forwards;
 }
 
 /* ---------- 불가살이 실제 게임 화면 (쇠 받기) ---------- */
@@ -1295,6 +1367,62 @@ html, body {
   40% { transform: translateX(8px); }
   60% { transform: translateX(-6px); }
   80% { transform: translateX(4px); }
+}
+
+/* ---------- 야광귀 게임: 손가락 인식(핸드트래킹) ----------
+   화면 우측 하단의 작은 미리보기(미러링)와, 검지손가락 끝을 따라다니는
+   원형 커서. 커서 자체는 마우스 클릭을 절대 가로채지 않도록
+   pointer-events:none을 준다 — 카메라를 못 쓰는 환경에서도 기존 클릭
+   폴백이 100% 그대로 동작해야 하기 때문. */
+.game1-hand-webcam-wrap {
+  position: absolute;
+  bottom: 3%;
+  right: 3%;
+  width: 15%;
+  aspect-ratio: 4 / 3;
+  border-radius: 1.4vh;
+  overflow: hidden;
+  border: 0.3vh solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0.6vh 1.6vh rgba(0, 0, 0, 0.45);
+  z-index: 15;
+  background: #000;
+}
+
+.game1-hand-webcam-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1); /* 미러링 */
+}
+
+/* transform: translate(xPx, yPx)로 매 프레임 위치를 갱신한다 — top/left
+   대신 transform을 쓰는 이유는 손가락 추적처럼 자주 갱신되는 값을
+   레이아웃 재계산 없이 부드럽게 움직이기 위해서다. */
+.game1-hand-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5vh;
+  height: 5vh;
+  margin: -2.5vh 0 0 -2.5vh;
+  border-radius: 50%;
+  border: 0.5vh solid rgba(255, 246, 201, 0.9);
+  background: radial-gradient(circle, rgba(255, 246, 201, 0.32) 0%, rgba(255, 246, 201, 0.04) 70%);
+  box-shadow: 0 0 1.6vh rgba(255, 246, 201, 0.55);
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* --dwell(0~100, JS가 매 프레임 설정)만큼 채워지는 진행 링 — 손가락을
+   조각 위에 얼마나 더 머물러야 선택되는지 시각적으로 보여준다. */
+.game1-hand-cursor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(#ffe08a calc(var(--dwell, 0) * 1%), transparent 0);
+  opacity: 0.85;
 }
 
 /* ---------- 야광귀 클리어 스토리 1: 짚신 완성 ---------- */
@@ -2099,7 +2227,7 @@ html, body {
 }
 
 .photo-result-button {
-  width: 47%;
+  width: 28%;
   background: none;
   border: none;
   padding: 0;
@@ -2119,6 +2247,131 @@ html, body {
 
 .photo-result-button:active {
   transform: scale(0.94);
+}
+
+/* ---------- 엔딩: QR 코드 화면 ----------
+   저장하기(button_store) 클릭 시 imgbb 업로드가 끝날 때까지는 로딩,
+   성공하면 QR 코드, 실패하면 에러 메시지 — 이 셋은 항상 하나만 보이도록
+   main.js의 setQrScreenState()가 hidden 속성으로 서로 배타적으로 토글한다. */
+
+.qr-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4vh;
+  z-index: 5;
+}
+
+.qr-spinner {
+  width: 7vh;
+  height: 7vh;
+  border: 0.7vh solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff6c9;
+  border-radius: 50%;
+  animation: qr-spin 0.9s linear infinite;
+}
+
+@keyframes qr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.qr-loading-text {
+  color: #fff6c9;
+  font-size: 2.2vh;
+  font-weight: 600;
+  text-shadow: 0 0.2vh 0.5vh rgba(0, 0, 0, 0.4);
+}
+
+.qr-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.6vh;
+  z-index: 5;
+}
+
+.qr-code-box {
+  width: 32vh;
+  height: 32vh;
+  background: #fff;
+  border-radius: 2vh;
+  padding: 2vh;
+  box-sizing: border-box;
+  box-shadow: 0 1.2vh 3vh rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* qrcode.js가 내부에 canvas 또는 img를 그려 넣는데, 어느 쪽이든 박스에
+   꽉 차게 반응형으로 스케일되도록 강제한다(실제 QR 데이터는 JS에서
+   고해상도로 생성해 스캔 품질은 유지된다). */
+.qr-code-box canvas,
+.qr-code-box img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.qr-caption {
+  color: #fff6c9;
+  font-size: 2.2vh;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.45);
+}
+
+.qr-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #fff6c9;
+  font-size: 2.2vh;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: pre-line;
+  z-index: 5;
+}
+
+.qr-home-button {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  width: 12%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 10;
+}
+
+.qr-home-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.qr-home-button:hover {
+  transform: translateX(-50%) scale(1.06);
+}
+
+.qr-home-button:active {
+  transform: translateX(-50%) scale(0.94);
 }
 
 /* ---------- 반응형 (모바일) ---------- */
