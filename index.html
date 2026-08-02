@@ -121,6 +121,8 @@
 <div class="screen" id="game3-play-screen" hidden>
   <img class="bg" src="asset/image/Background_step6.png" alt="배경">
 
+  <div class="firefly-layer" id="game3-firefly-layer"></div>
+
   <img class="game3-mission" src="asset/image/mission_game3_main.png" alt="불을 피해 쇠를 3개 모아줘! 쇠를 좋아하는 불가살이를 위해 쇠로 만들어진 단어를 모아주세요.">
 
   <div class="game3-count" id="game3-count">
@@ -148,6 +150,8 @@
 <div class="screen" id="game1-play-screen" hidden>
   <img class="bg" src="asset/image/Background_step4.png" alt="배경">
 
+  <div class="firefly-layer" id="game1-firefly-layer"></div>
+
   <img class="game1-mission" src="asset/image/mission_game1_main.png" alt="'짚신' 글씨를 만들어줘 - 순서대로 클릭해 야광귀에게 짚신을 전달해요">
 
   <div class="wordbox-row" id="wordbox-row">
@@ -166,7 +170,11 @@
   <img class="jamo-piece jamo-5" data-order="5" data-letter="ㅣ" src="asset/image/game1_word5.png" alt="자모 ㅣ">
   <img class="jamo-piece jamo-6" data-order="6" data-letter="ㄴ" src="asset/image/game1_word6.png" alt="자모 ㄴ">
 
-  <img class="rule-character" id="game1-character" src="asset/image/ms_yg_basic.png" alt="야광귀">
+  <div class="yg-rule-char-wrap">
+    <div class="char-idle-bounce">
+      <img class="yg-rule-character" id="game1-character" src="asset/image/ms_yg_basic.png" alt="야광귀">
+    </div>
+  </div>
 
   <div class="game1-hand-webcam-wrap" id="game1-hand-webcam-wrap" hidden>
     <video class="game1-hand-webcam-video" id="game1-hand-webcam-video" autoplay playsinline muted></video>
@@ -298,11 +306,15 @@
 <div class="screen" id="game4-play-screen" hidden>
   <img class="bg" src="asset/image/Background_step7.png" alt="배경">
 
+  <div class="firefly-layer" id="game4-firefly-layer"></div>
+
   <img class="game4-quiz-mission" src="asset/image/mission_game4.png" alt="올바른 맞춤법을 골라줘! 아픈 도깨비에게 해줄 수 있는 말을 골라주세요">
 
   <div class="dk-quiz-char-wrap">
-    <img class="dk-quiz-character" id="game4-quiz-character" src="asset/image/ms_dk_sick.png" alt="도깨비">
-    <img class="dk-quiz-talk" id="game4-quiz-talk" src="asset/image/talk_dk_quiz.png" alt="나 너무 아파">
+    <div class="char-idle-bounce">
+      <img class="dk-quiz-character" id="game4-quiz-character" src="asset/image/ms_dk_sick.png" alt="도깨비">
+      <img class="dk-quiz-talk" id="game4-quiz-talk" src="asset/image/talk_dk_quiz.png" alt="나 너무 아파">
+    </div>
   </div>
 
   <button class="game4-quiz-option game4-quiz-option--a" id="game4-quiz-a" type="button">
@@ -455,7 +467,7 @@
   <div class="qr-error" id="qr-error" hidden></div>
 
   <button class="qr-home-button" id="qr-home-button" type="button">
-    <img src="asset/image/button_home.png" alt="처음으로">
+    <img src="asset/image/button_fin.png" alt="처음으로">
   </button>
 </div>
 

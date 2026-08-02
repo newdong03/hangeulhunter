@@ -258,17 +258,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- 배경 반딧불이 파티클 ----------
   const FIREFLY_COUNT = 13;
+  const FIREFLY_MIN_DISTANCE_PCT = 16; // 반딧불이끼리 보장할 최소 거리(%, 화면 기준 좌표계)
+  const FIREFLY_PLACEMENT_MAX_ATTEMPTS = 30; // 최소 거리를 만족하는 자리를 찾기 위한 최대 재시도 횟수
+
+  // 순수 Math.random()만 쓰면 반딧불이들이 우연히 한곳에 몰려 찍힐 수
+  // 있다. "최소 거리 보장 + 랜덤 오프셋" 방식으로, 이미 배치된 좌표들과
+  // FIREFLY_MIN_DISTANCE_PCT 이상 떨어진 자리가 나올 때까지 다시 뽑는다.
+  // 재시도 안에서 조건을 만족하는 자리를 못 찾으면(개수가 많거나 화면이
+  // 좁을 때) 무한정 재시도하는 대신 마지막 시도 값을 그대로 써서 항상
+  // 요청한 개수만큼은 채운다.
+  function pickFireflyPosition(placed) {
+    for (let attempt = 0; attempt < FIREFLY_PLACEMENT_MAX_ATTEMPTS; attempt++) {
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const tooClose = placed.some((p) => {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        return Math.sqrt(dx * dx + dy * dy) < FIREFLY_MIN_DISTANCE_PCT;
+      });
+      if (!tooClose) return { x, y };
+    }
+    return { x: Math.random() * 100, y: Math.random() * 100 };
+  }
 
   function buildFireflies(layerId, count = FIREFLY_COUNT) {
     const layer = document.getElementById(layerId);
     if (!layer) return;
     layer.innerHTML = "";
 
+    const placed = [];
+
     for (let i = 0; i < count; i++) {
+      const { x, y } = pickFireflyPosition(placed);
+      placed.push({ x, y });
+
       const firefly = document.createElement("div");
       firefly.className = "firefly";
-      firefly.style.left = `${Math.random() * 100}%`;
-      firefly.style.top = `${Math.random() * 100}%`;
+      firefly.style.left = `${x}%`;
+      firefly.style.top = `${y}%`;
       firefly.style.setProperty("--drift-x", `${(Math.random() * 3 - 1.5).toFixed(1)}vw`);
       firefly.style.setProperty("--drift-y", `${(Math.random() * 4 + 2).toFixed(1)}vh`);
 
@@ -461,6 +488,9 @@ document.addEventListener("DOMContentLoaded", () => {
   renderMap();
   buildFireflies("firefly-layer");
   buildFireflies("start-firefly-layer", 14);
+  buildFireflies("game1-firefly-layer");
+  buildFireflies("game3-firefly-layer");
+  buildFireflies("game4-firefly-layer");
 
   // ---------- 디버그 모드: 요괴맵으로 즉시 진입 + 전체 스테이지 클리어 ----------
   // 시작화면의 cloud1 장식 이미지를 클릭하면 캐릭터 선택(2단계)을 건너뛰고
@@ -568,19 +598,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function resetGame4Quiz() {
     game4QuizIndex = 0;
+    game4QuizAButton.classList.remove("is-correct");
+    game4QuizBButton.classList.remove("is-correct");
     loadGame4Quiz(game4QuizIndex);
   }
 
-  function handleGame4Answer(choice) {
+  function handleGame4Answer(choice, buttonEl) {
     const quiz = GAME4_QUIZZES[game4QuizIndex];
     if (choice === quiz.correct) {
-      handleGame4Correct();
+      handleGame4Correct(buttonEl);
     } else {
       handleGame4Wrong();
     }
   }
 
-  function handleGame4Correct() {
+  const GAME4_CORRECT_FEEDBACK_MS = 650; // 정답 강조 연출 후 다음 문제/클리어로 넘어가기까지의 텀
+
+  // 정답을 고르면 그 카드에 강조 표시(테두리 글로우 + 살짝 확대되는 바운스)와
+  // 야광귀 게임의 정답 파티클(createSparkleBurst)을 같은 톤(#ffe08a)으로
+  // 짧게 보여준 뒤, 잠깐 텀을 두고서야 다음 문제(또는 클리어)로 넘어간다.
+  function handleGame4Correct(buttonEl) {
+    buttonEl.classList.remove("is-correct");
+    void buttonEl.offsetWidth; // 리플로우시켜 연속 정답에도 강조 연출이 매번 재생되게 함
+    buttonEl.classList.add("is-correct");
+
+    const btnRect = buttonEl.getBoundingClientRect();
+    const screenRect = game4PlayScreen.getBoundingClientRect();
+    const leftPercent = ((btnRect.left + btnRect.width / 2 - screenRect.left) / screenRect.width) * 100;
+    const topPercent = ((btnRect.top + btnRect.height / 2 - screenRect.top) / screenRect.height) * 100;
+    createSparkleBurst(game4PlayScreen, leftPercent, topPercent, "#ffe08a");
+
+    setTimeout(() => {
+      buttonEl.classList.remove("is-correct");
+      advanceGame4Quiz();
+    }, GAME4_CORRECT_FEEDBACK_MS);
+  }
+
+  function advanceGame4Quiz() {
     game4QuizIndex += 1;
 
     if (game4QuizIndex >= GAME4_QUIZZES.length) {
@@ -615,8 +669,8 @@ document.addEventListener("DOMContentLoaded", () => {
     goToGame4Story1();
   }
 
-  game4QuizAButton.addEventListener("click", () => handleGame4Answer("a"));
-  game4QuizBButton.addEventListener("click", () => handleGame4Answer("b"));
+  game4QuizAButton.addEventListener("click", () => handleGame4Answer("a", game4QuizAButton));
+  game4QuizBButton.addEventListener("click", () => handleGame4Answer("b", game4QuizBButton));
 
   // ---------- 불가살이 실제 게임 화면 (쇠 받기) ----------
 
@@ -1934,7 +1988,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  qrHomeButton.addEventListener("click", () => {
+  // "모험 끝내기"(button_fin)는 게임을 전부 끝낸 뒤에만 도달하는 버튼이라,
+  // 화면 상단의 일반 홈 버튼(goHomeScreen)과 달리 다음 플레이가 완전히
+  // 처음 상태로 시작되도록 진행 상태까지 전부 초기화한다. 중간에 아무
+  // 화면에서나 누를 수 있는 일반 홈 버튼은 진행 상황을 지우면 안 되므로
+  // 건드리지 않는다.
+  function finishGameAndGoHome() {
+    Object.keys(clearedStages).forEach((key) => {
+      clearedStages[key] = false;
+    });
+    window.selectedCharacter = null;
+    debugModeActive = false;
+    renderMap(); // 다음에 요괴맵에 들어갔을 때 바로 초기 상태로 보이도록 미리 갱신
     goHomeScreen();
-  });
+  }
+
+  qrHomeButton.addEventListener("click", finishGameAndGoHome);
 });
