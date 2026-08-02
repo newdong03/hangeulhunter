@@ -13,7 +13,7 @@
 
   <div class="firefly-layer" id="start-firefly-layer"></div>
 
-  <img class="start-cloud start-cloud--1" src="asset/image/cloud1.png" alt="">
+  <img class="start-cloud start-cloud--1" id="debug-cloud-trigger" src="asset/image/cloud1.png" alt="">
   <div class="monster-wrap monster-wrap--tl">
     <img class="monster" src="asset/image/ms_yg_fly.png" alt="야광귀">
   </div>
@@ -330,6 +330,103 @@
   <button class="story3-next-button" id="game4-story-next-button" type="button">
     <img src="asset/image/button_next.png" alt="다음">
   </button>
+</div>
+
+<div class="screen" id="ending-cards-screen" hidden>
+  <img class="bg" src="asset/image/Background_step3.png" alt="배경">
+
+  <div class="ending-card-row" id="ending-card-row">
+    <div class="ending-card ending-card--1">
+      <img src="asset/image/card_1_front.png" alt="아래아 카드">
+    </div>
+    <div class="ending-card ending-card--2">
+      <img src="asset/image/card_2_front.png" alt="반시옷 카드">
+    </div>
+    <div class="ending-card ending-card--3">
+      <img src="asset/image/card_3_front.png" alt="옛이응 카드">
+    </div>
+    <div class="ending-card ending-card--5">
+      <img src="asset/image/card_5_front.png" alt="여린히읗 카드">
+    </div>
+  </div>
+
+  <img class="ending-complete-text" src="asset/image/ending_talk_image_1.png" alt="훈민정음 28자모 완성!">
+
+  <button class="story3-next-button" id="ending-next-button" type="button">
+    <img src="asset/image/button_next.png" alt="다음">
+  </button>
+</div>
+
+<div class="screen" id="ending-greeting-screen" hidden>
+  <img class="bg" src="asset/image/Background_step3.png" alt="배경">
+
+  <img class="ending-greeting-title" src="asset/image/ending_talk_image.png" alt="요괴들의 인사">
+
+  <div class="ending-monster-row" id="ending-monster-row">
+    <div class="ending-monster ending-monster--1">
+      <div class="ending-monster-sway">
+        <div class="char-idle-bounce">
+          <img class="ending-monster-img" src="asset/image/ms_yg_basic.png" alt="야광귀">
+        </div>
+      </div>
+    </div>
+    <div class="ending-monster ending-monster--2">
+      <div class="ending-monster-sway">
+        <div class="char-idle-bounce">
+          <img class="ending-monster-img" src="asset/image/ms_gs_basic.png" alt="그슨대">
+        </div>
+      </div>
+    </div>
+    <div class="ending-monster ending-monster--3">
+      <div class="ending-monster-sway">
+        <div class="char-idle-bounce">
+          <img class="ending-monster-img" src="asset/image/ms_bs_basic.png" alt="불가살이">
+        </div>
+      </div>
+    </div>
+    <div class="ending-monster ending-monster--4">
+      <div class="ending-monster-sway">
+        <div class="char-idle-bounce">
+          <img class="ending-monster-img" src="asset/image/ms_dk_basic.png" alt="도깨비">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="story3-next-button" id="ending-greeting-next-button" type="button">
+    <img src="asset/image/button_remember.png" alt="다음">
+  </button>
+</div>
+
+<div class="screen" id="webcam-screen" hidden>
+  <div class="webcam-video-wrap" id="webcam-video-wrap">
+    <video class="webcam-video" id="webcam-video" autoplay playsinline muted></video>
+  </div>
+
+  <img class="webcam-frame" id="webcam-frame-img" src="asset/image/final_frame.png" alt="촬영 프레임">
+
+  <div class="webcam-error" id="webcam-error" hidden></div>
+
+  <button class="webcam-photo-button" id="webcam-photo-button" type="button">
+    <img src="asset/image/button_photo.png" alt="촬영">
+  </button>
+</div>
+
+<div class="screen" id="photo-result-screen" hidden>
+  <img class="bg" src="asset/image/Background_step1.png" alt="배경">
+
+  <div class="photo-result-frame">
+    <img class="photo-result-img" id="photo-result-img" src="" alt="촬영한 사진">
+  </div>
+
+  <div class="photo-result-buttons">
+    <button class="photo-result-button" id="photo-again-button" type="button">
+      <img src="asset/image/button_photoagain.png" alt="다시 찍기">
+    </button>
+    <button class="photo-result-button" id="photo-store-button" type="button">
+      <img src="asset/image/button_store.png" alt="저장">
+    </button>
+  </div>
 </div>
 
 <script src="shared/main.js"></script>

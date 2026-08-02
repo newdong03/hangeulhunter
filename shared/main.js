@@ -30,6 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedCharacter = null;
 
   function showScreen(screen) {
+    // 웹캠 화면을 벗어나는 모든 경로(다음 버튼뿐 아니라 뒤로가기/홈 버튼
+    // 포함)에서 카메라 스트림을 확실히 꺼야 하므로, 화면 전환이 실제로
+    // 일어나는 이 지점에서 한 번만 체크한다. webcamScreen/stopWebcamStream은
+    // 아래쪽에서 선언되지만, 이 함수는 그 선언이 끝난 뒤(사용자가 실제로
+    // 화면을 조작할 때)에만 호출되므로 문제없다.
+    const current = getVisibleScreen();
+    if (current === webcamScreen && screen !== webcamScreen) {
+      stopWebcamStream();
+    }
+
     screens.forEach((s) => {
       s.hidden = s !== screen;
     });
@@ -196,6 +206,12 @@ document.addEventListener("DOMContentLoaded", () => {
     dokkaebi: false,
   };
 
+  // 디버그 모드(시작화면 cloud1 클릭)로 진입했는지 여부. 평소에는 이미
+  // 클리어된("on") 발판을 다시 클릭할 수 없지만, 디버그 모드에서는 모든
+  // 스테이지를 자유롭게 다시 들어가볼 수 있어야 하므로 이 값으로 그 조건만
+  // 풀어준다.
+  let debugModeActive = false;
+
   // 스테이지 상태 규칙(엄격 버전):
   // 앞에서부터 순서대로 훑으면서, "여기까지 전부 클리어됐다"는 사실이 끊기는
   // 순간 그 뒤는 전부 "off"로 확정한다 — 자기 자신의 clearedStages 값만
@@ -282,7 +298,11 @@ document.addEventListener("DOMContentLoaded", () => {
       wrap.appendChild(label);
 
       wrap.addEventListener("click", () => {
-        if (wrap.dataset.status !== "select") return; // off/on 상태는 반응 없음
+        // 평소엔 "select"(아직 도전 전) 상태만 클릭 가능하다. 디버그
+        // 모드에서는 이미 클리어된("on") 발판도 자유롭게 다시 들어갈 수
+        // 있게 조건을 풀어준다.
+        const isClickable = wrap.dataset.status === "select" || (debugModeActive && wrap.dataset.status === "on");
+        if (!isClickable) return; // off 상태(또는 일반 모드의 on)는 반응 없음
         console.log(`스테이지 이동: ${stage.name}`);
 
         const targetScreen = STAGE_SCREENS[stage.key];
@@ -345,8 +365,19 @@ document.addEventListener("DOMContentLoaded", () => {
         mapCharacter.style.top = `${selectedStage.top - CHAR_TOP_OFFSET}%`;
         mapCharacter.hidden = false;
       }
+    } else if (debugModeActive) {
+      // 디버그 모드는 모든 발판이 "on"이라 "select" 상태 발판이 없다.
+      // 그렇다고 캐릭터를 숨기면 요괴맵이 텅 비어 보이므로, 마지막 스테이지
+      // 발판 위에 세워 둔다.
+      if (!skipCharacterPlacement) {
+        const lastStage = STAGES[STAGES.length - 1];
+        mapCharacter.src = getCharacterSpriteSrc();
+        mapCharacter.style.left = `${lastStage.left}%`;
+        mapCharacter.style.top = `${lastStage.top - CHAR_TOP_OFFSET}%`;
+        mapCharacter.hidden = false;
+      }
     } else {
-      // 모든 스테이지 클리어 (현재는 발생하지 않지만 확장 대비)
+      // 모든 스테이지 클리어 (디버그 모드가 아니면 현재는 발생하지 않지만 확장 대비)
       mapCharacter.hidden = true;
     }
   }
@@ -420,6 +451,31 @@ document.addEventListener("DOMContentLoaded", () => {
   renderMap();
   buildFireflies("firefly-layer");
   buildFireflies("start-firefly-layer", 14);
+
+  // ---------- 디버그 모드: 요괴맵으로 즉시 진입 + 전체 스테이지 클리어 ----------
+  // 시작화면의 cloud1 장식 이미지를 클릭하면 캐릭터 선택(2단계)을 건너뛰고
+  // 곧장 요괴맵으로 이동한다. 테스트 편의용이라 별도의 숨김 처리 없이 기존
+  // 장식 이미지를 그대로 트리거로 쓴다(style.css의 #debug-cloud-trigger가
+  // 이 이미지만 클릭 가능하도록 pointer-events를 풀어준다).
+  const debugCloudTrigger = document.getElementById("debug-cloud-trigger");
+  debugCloudTrigger.addEventListener("click", () => {
+    console.log("디버그 모드 진입");
+
+    debugModeActive = true;
+
+    // 캐릭터 선택을 건너뛰므로, 아직 캐릭터가 선택되지 않았다면 요괴맵에
+    // 캐릭터가 정상적으로 보이도록 기본값을 넣어준다.
+    if (!window.selectedCharacter) {
+      window.selectedCharacter = "boy";
+    }
+
+    Object.keys(clearedStages).forEach((key) => {
+      clearedStages[key] = true;
+    });
+
+    resetHistoryAndShow(mapScreen);
+    renderMap();
+  });
 
   // ---------- 야광귀 룰 설명 화면 ----------
   game1ChallengeButton.addEventListener("click", () => {
@@ -940,21 +996,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // container 안의 (leftPercent, topPercent) 위치에 color 색으로 반짝이는
   // 파티클(중심 플래시 + 사방으로 튀는 점들)을 띄운다. 야광귀 게임의 자모 정답
   // 이펙트와 짚신 완성 스토리 연출이 함께 사용한다.
-  function createSparkleBurst(container, leftPercent, topPercent, color) {
+  // options.scale: 코어/점 크기와 퍼지는 반경을 함께 키우는 배율(기본 1) —
+  // 엔딩의 "화면 전체에 크게 한 번" 연출이 이 배율만 키워서 재사용한다.
+  // options.dotCount: 사방으로 튀는 점 개수(기본 14).
+  function createSparkleBurst(container, leftPercent, topPercent, color, options = {}) {
+    const scale = options.scale || 1;
+    const dotCount = options.dotCount || 14;
+
     const burst = document.createElement("div");
     burst.className = "sparkle-burst";
     burst.style.left = `${leftPercent}%`;
     burst.style.top = `${topPercent}%`;
     burst.style.setProperty("--burst-color", color);
+    burst.style.setProperty("--burst-scale", scale);
 
     const core = document.createElement("div");
     core.className = "sparkle-core";
     burst.appendChild(core);
 
-    const DOT_COUNT = 14;
-    for (let i = 0; i < DOT_COUNT; i++) {
-      const angle = (360 / DOT_COUNT) * i + (Math.random() * 18 - 9); // 살짝 흩뿌려 자연스럽게
-      const radius = 13 + Math.random() * 9; // vh 단위, 사방으로 퍼지는 거리 (더 넓게)
+    for (let i = 0; i < dotCount; i++) {
+      const angle = (360 / dotCount) * i + (Math.random() * 18 - 9); // 살짝 흩뿌려 자연스럽게
+      const radius = (13 + Math.random() * 9) * scale; // vh 단위, 사방으로 퍼지는 거리 (더 넓게)
       const rad = (angle * Math.PI) / 180;
 
       const dot = document.createElement("div");
@@ -1226,11 +1288,295 @@ document.addEventListener("DOMContentLoaded", () => {
     game4StoryCard.classList.toggle("is-flipped");
   });
 
-  // 도깨비는 마지막 스테이지라 clearStageAndReturnToMap이 다음 스테이지로
-  // 점프시키지 않고 그대로 요괴맵에 머문다(모든 발판이 on 상태로 표시됨).
-  // 엔딩 화면은 아직 없어서 콘솔 로그로만 완료를 알린다.
+  // 도깨비는 마지막 스테이지라 요괴맵으로 돌아가는 대신 곧장 엔딩(4장의
+  // 자모 카드 모으기) 연출로 이어간다. clearedStages는 요괴맵 상태 표시용으로
+  // 계속 갱신해 두되(나중에 뒤로가기/홈으로 맵에 들르는 경우를 대비),
+  // 화면 전환 자체는 resetHistoryAndShow(mapScreen) 없이 바로 진행한다.
   game4StoryNextButton.addEventListener("click", () => {
-    clearStageAndReturnToMap("dokkaebi");
-    console.log("게임 클리어! 모든 자모 획득 완료");
+    clearedStages.dokkaebi = true;
+    console.log("게임 클리어! 모든 자모 획득 완료 -> 엔딩 카드 연출로 이동");
+    goToEndingCards();
+  });
+
+  // ---------- 엔딩: 4장의 자모 카드 모으기 ----------
+
+  const endingCardsScreen = document.getElementById("ending-cards-screen");
+  const endingNextButton = document.getElementById("ending-next-button");
+
+  // 카드 4장이 card_1 -> card_2 -> card_3 -> card_5 순서로 하나씩 내려와
+  // 자리잡은 뒤 잠깐(0.5초) 멈춰 있다가, 화면 전체에 크게 반짝이는 빛과
+  // 완성 문구가 뜬다. 각 카드의 등장 애니메이션(순차 진입, 0.85초씩)은
+  // CSS(#ending-cards-screen.is-playing .ending-card--*)가 담당하므로,
+  // 여기서는 그 애니메이션들이 전부 끝난 뒤의 타이밍만 계산한다:
+  // 가장 늦게 시작하는 카드(1.65s 딜레이) + 재생 시간(0.85s) = 2.5s에
+  // 안착 -> 0.5초 정지 -> 3s에 빛 연출 시작.
+  const ENDING_GLOW_DELAY_MS = 3000;
+
+  function goToEndingCards() {
+    changeScreen(endingCardsScreen, { animate: true });
+
+    setTimeout(() => {
+      // 정답 파티클(createSparkleBurst)을 화면 중앙에 훨씬 크게 한 번
+      // 터뜨려 "훈민정음 28자모 완성!" 텍스트와 함께 등장하게 한다.
+      createSparkleBurst(endingCardsScreen, 50, 50, "#ffe08a", { scale: 3.2, dotCount: 24 });
+    }, ENDING_GLOW_DELAY_MS);
+  }
+
+  endingNextButton.addEventListener("click", () => {
+    changeScreen(endingGreetingScreen, { animate: true });
+  });
+
+  // ---------- 엔딩: 요괴들 인사 ----------
+
+  const endingGreetingScreen = document.getElementById("ending-greeting-screen");
+  const endingGreetingNextButton = document.getElementById("ending-greeting-next-button");
+
+  endingGreetingNextButton.addEventListener("click", () => {
+    changeScreen(webcamScreen, { animate: true });
+    startWebcamStream();
+  });
+
+  // ---------- 엔딩: 웹캠 촬영 화면 ----------
+
+  const webcamScreen = document.getElementById("webcam-screen");
+  const webcamVideo = document.getElementById("webcam-video");
+  const webcamFrameImg = document.getElementById("webcam-frame-img");
+  const webcamError = document.getElementById("webcam-error");
+  const webcamPhotoButton = document.getElementById("webcam-photo-button");
+
+  // final_frame.png(1920x1080) 원본을 실측해서 구한, 가운데 투명 구멍(웹캠이
+  // 비치는 자리)의 픽셀 좌표. style.css의 .webcam-video-wrap(%) 값과
+  // 반드시 같은 자리를 가리켜야 미리보기와 캡처 결과가 어긋나지 않는다.
+  const FRAME_NATIVE_WIDTH = 1920;
+  const FRAME_NATIVE_HEIGHT = 1080;
+  const WEBCAM_HOLE_PX = { x: 473, y: 170, width: 974, height: 589 };
+
+  // 캔버스에 그려 넣을 프레임 이미지는 화면에 항상 떠 있는 webcamFrameImg
+  // (#webcam-frame-img)를 그대로 재사용하지 않고 별도로 한 번 더 로드한다.
+  // file://로 페이지를 직접 열었을 때, crossOrigin 없이 로드된 로컬 이미지를
+  // canvas에 그리면 canvas가 "오염(tainted)"되어 toDataURL() 호출 시
+  // SecurityError가 난다 — crossOrigin="anonymous"를 준 뒤 다시 로드하면
+  // 해결되는, 이 문제의 표준적인 우회법이다. 화면에 계속 보여야 하는
+  // webcamFrameImg 자체를 건드리면 혹시 이 로드가 실패했을 때 프레임 장식이
+  // 통째로 사라지는 회귀가 생기므로, 캡처 전용 사본을 따로 둔다.
+  let webcamFrameCaptureImg = null;
+  let webcamFrameCaptureImgPromise = null;
+
+  function loadWebcamFrameCaptureImg() {
+    if (webcamFrameCaptureImgPromise) return webcamFrameCaptureImgPromise;
+
+    webcamFrameCaptureImgPromise = new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        webcamFrameCaptureImg = img;
+        console.log("[웹캠] 캡처용 프레임 이미지(crossOrigin) 로드 성공");
+        resolve(img);
+      };
+      img.onerror = (event) => {
+        // crossOrigin 로드가 실패하면(주로 file://를 벗어난 특이 케이스)
+        // 이미 화면에 붙어 있는 프레임 이미지로 대체한다. 이 경우 캡처 시
+        // 여전히 SecurityError가 날 수 있지만, 그때는 콘솔에 그대로 로그가
+        // 남으므로 원인 파악은 가능하다.
+        console.log("[웹캠] 캡처용 프레임 이미지(crossOrigin) 로드 실패, 기본 프레임 이미지로 대체:", event);
+        webcamFrameCaptureImg = webcamFrameImg;
+        resolve(webcamFrameImg);
+      };
+      img.src = webcamFrameImg.currentSrc || webcamFrameImg.src;
+    });
+
+    return webcamFrameCaptureImgPromise;
+  }
+
+  let webcamStream = null;
+  let capturedPhotoDataUrl = null; // 다음 화면(결과 확인)에서 쓸 합성 캡처 결과(base64 PNG)
+  let webcamNoticeTimer = null; // "아직 준비 중이에요" 같은 일시적 안내 문구를 자동으로 닫는 타이머
+
+  function stopWebcamStream() {
+    webcamVideo.onloadedmetadata = null;
+    if (!webcamStream) return;
+    webcamStream.getTracks().forEach((track) => track.stop());
+    webcamStream = null;
+    webcamVideo.srcObject = null;
+  }
+
+  function showWebcamError(message) {
+    clearTimeout(webcamNoticeTimer);
+    webcamError.textContent = message;
+    webcamError.hidden = false;
+    webcamPhotoButton.disabled = true;
+  }
+
+  // 에러는 아니지만 "아직 촬영할 수 없는 상태"를 잠깐 알려주는 안내 문구.
+  // (예: 카메라 초기화가 끝나기 전에 촬영 버튼을 눌렀을 때) 일정 시간 뒤
+  // 자동으로 사라지고, 버튼을 비활성화하지는 않는다.
+  function flashWebcamNotice(message, durationMs = 1600) {
+    webcamError.textContent = message;
+    webcamError.hidden = false;
+    clearTimeout(webcamNoticeTimer);
+    webcamNoticeTimer = setTimeout(() => {
+      webcamError.hidden = true;
+    }, durationMs);
+  }
+
+  async function startWebcamStream() {
+    clearTimeout(webcamNoticeTimer);
+    webcamError.hidden = true;
+    webcamPhotoButton.disabled = true;
+    loadWebcamFrameCaptureImg(); // 촬영 버튼을 누르기 전에 미리 로드해둔다.
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showWebcamError("이 브라우저에서는 카메라를 사용할 수 없어요.\n다른 브라우저로 시도해주세요.");
+      return;
+    }
+
+    try {
+      webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      console.log("[웹캠] 카메라 스트림 획득 성공");
+
+      // 화면을 이동한 사이(연출 애니메이션 중) 사용자가 이미 뒤로가기/홈으로
+      // 나가버렸다면 스트림만 즉시 정리하고 video에는 연결하지 않는다.
+      if (webcamScreen.hidden) {
+        webcamStream.getTracks().forEach((track) => track.stop());
+        webcamStream = null;
+        return;
+      }
+
+      webcamVideo.srcObject = webcamStream;
+
+      // loadedmetadata 전에는 videoWidth/videoHeight가 0이라 캡처가 불가능하다.
+      // 카메라 초기화가 느린 환경(특히 실제 하드웨어)에서 그 사이에 촬영
+      // 버튼을 눌러도 조용히 아무 일도 안 일어나는 문제를 막기 위해, 버튼은
+      // 반드시 메타데이터가 준비된 뒤에만 활성화한다.
+      webcamVideo.onloadedmetadata = () => {
+        console.log(
+          "[웹캠] 비디오 메타데이터 로드 완료 - readyState:",
+          webcamVideo.readyState,
+          "크기:",
+          webcamVideo.videoWidth,
+          "x",
+          webcamVideo.videoHeight
+        );
+        webcamPhotoButton.disabled = false;
+      };
+
+      // srcObject를 스크립트로 지정한 경우 autoplay 속성만으로는 재생이
+      // 시작되지 않는 브라우저가 있어 명시적으로 재생을 요청한다.
+      try {
+        await webcamVideo.play();
+      } catch (playError) {
+        console.log("[웹캠] video.play() 호출 실패(무시 가능):", playError);
+      }
+    } catch (error) {
+      console.log("[웹캠] 카메라 접근 실패:", error);
+      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+        showWebcamError("카메라 권한이 거부되었어요.\n브라우저 설정에서 카메라 접근을 허용한 뒤 다시 시도해주세요.");
+      } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+        showWebcamError("사용할 수 있는 카메라를 찾지 못했어요.");
+      } else {
+        showWebcamError("카메라를 불러오는 중 문제가 생겼어요.");
+      }
+    }
+  }
+
+  // video의 object-fit:cover와 동일한 비율로 잘라내야 미리보기와 캡처
+  // 결과가 어긋나지 않는다 — dest(구멍) 비율에 맞춰 source(비디오 원본)의
+  // 가운데를 기준으로 잘라낼 영역을 계산한다.
+  function getCoverSourceRect(sourceWidth, sourceHeight, destWidth, destHeight) {
+    const sourceRatio = sourceWidth / sourceHeight;
+    const destRatio = destWidth / destHeight;
+
+    if (sourceRatio > destRatio) {
+      const sh = sourceHeight;
+      const sw = sh * destRatio;
+      return { sx: (sourceWidth - sw) / 2, sy: 0, sw, sh };
+    }
+
+    const sw = sourceWidth;
+    const sh = sw / destRatio;
+    return { sx: 0, sy: (sourceHeight - sh) / 2, sw, sh };
+  }
+
+  function capturePhoto() {
+    console.log("[웹캠] 촬영 버튼 클릭됨 - hasStream:", !!webcamStream, "readyState:", webcamVideo.readyState, "크기:", webcamVideo.videoWidth, "x", webcamVideo.videoHeight);
+
+    if (!webcamStream || !webcamVideo.videoWidth) {
+      // 예전에는 여기서 아무 반응 없이 조용히 리턴해서, 카메라 초기화가
+      // 아직 끝나지 않은 사이에 누르면 "눌러도 안 찍힘"처럼 보였다.
+      // 이제는 버튼 자체가 loadedmetadata 이후에만 활성화되므로 정상
+      // 흐름에서는 이 분기를 탈 일이 거의 없지만, 혹시 모를 상황을 대비해
+      // 사용자에게 이유를 알려준다.
+      flashWebcamNotice("카메라를 아직 불러오는 중이에요. 잠시 후 다시 눌러주세요.");
+      return;
+    }
+
+    // canvas 합성 단계(drawImage/toDataURL)는 브라우저·실행 환경에 따라
+    // 보안 제약(예: file://로 직접 열었을 때의 캔버스 오염 등)으로 예외를
+    // 던질 수 있다. try/catch 없이 두면 예외가 콘솔에만 조용히 찍히고
+    // 화면은 아무 반응이 없어 "눌러도 안 찍힘"처럼 보이므로, 반드시
+    // 잡아서 원인을 로그로 남기고 사용자에게도 알려준다.
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = FRAME_NATIVE_WIDTH;
+      canvas.height = FRAME_NATIVE_HEIGHT;
+      const ctx = canvas.getContext("2d");
+
+      const { sx, sy, sw, sh } = getCoverSourceRect(
+        webcamVideo.videoWidth,
+        webcamVideo.videoHeight,
+        WEBCAM_HOLE_PX.width,
+        WEBCAM_HOLE_PX.height
+      );
+      // 1) 웹캠 프레임을 구멍 자리에 맞춰 그리고, 2) 그 위에 final_frame.png를
+      // 통째로 덮어써 프레임이 캡처 이미지에 포함되도록 합성한다.
+      ctx.drawImage(webcamVideo, sx, sy, sw, sh, WEBCAM_HOLE_PX.x, WEBCAM_HOLE_PX.y, WEBCAM_HOLE_PX.width, WEBCAM_HOLE_PX.height);
+      // crossOrigin으로 다시 로드해둔 프레임 사본이 있으면 그것을 쓰고,
+      // 아직 준비되지 않았다면(로드가 늦었거나 실패) 화면에 이미 떠 있는
+      // 기본 프레임 이미지로 대체한다.
+      ctx.drawImage(webcamFrameCaptureImg || webcamFrameImg, 0, 0, FRAME_NATIVE_WIDTH, FRAME_NATIVE_HEIGHT);
+
+      capturedPhotoDataUrl = canvas.toDataURL("image/png");
+      console.log("[웹캠] 촬영 완료 - 캡처 이미지 생성됨 (base64 길이:", capturedPhotoDataUrl.length, ")");
+      stopWebcamStream();
+      goToPhotoResult();
+    } catch (captureError) {
+      console.error("[웹캠] 촬영 합성 중 오류 - name:", captureError.name, "message:", captureError.message, captureError);
+
+      if (captureError.name === "SecurityError") {
+        console.error(
+          "[웹캠] SecurityError = canvas가 오염(tainted)됐다는 뜻. crossOrigin 없이 로드된 로컬 이미지를 canvas에 그린 뒤 " +
+            "toDataURL()을 호출하면 발생한다 — 특히 index.html을 file://로 직접 열었을 때 흔하다. " +
+            "webcamFrameCaptureImg(crossOrigin=\"anonymous\") 로드 여부: " + (webcamFrameCaptureImg ? "로드됨" : "아직 로드 안 됨/실패") +
+            ". 그래도 계속되면 file:// 대신 로컬 서버(http://localhost:...)로 열어서 실행해봐야 한다."
+        );
+        flashWebcamNotice("사진을 저장하는 중 보안 오류가 발생했어요.\n파일을 직접 연 경우, 로컬 서버로 실행해보세요.", 3000);
+      } else {
+        flashWebcamNotice("사진을 저장하는 중 문제가 생겼어요. 다시 시도해주세요.", 2200);
+      }
+    }
+  }
+
+  webcamPhotoButton.addEventListener("click", capturePhoto);
+
+  // ---------- 엔딩: 촬영 결과 확인 화면 ----------
+
+  const photoResultScreen = document.getElementById("photo-result-screen");
+  const photoResultImg = document.getElementById("photo-result-img");
+  const photoAgainButton = document.getElementById("photo-again-button");
+  const photoStoreButton = document.getElementById("photo-store-button");
+
+  function goToPhotoResult() {
+    photoResultImg.src = capturedPhotoDataUrl;
+    changeScreen(photoResultScreen, { animate: true });
+  }
+
+  photoAgainButton.addEventListener("click", () => {
+    changeScreen(webcamScreen, { animate: true });
+    startWebcamStream();
+  });
+
+  photoStoreButton.addEventListener("click", () => {
+    // TODO: QR 변환/저장 로직은 다음 단계에서 별도로 연결
+    console.log("QR 저장 로직 연결 예정");
   });
 });

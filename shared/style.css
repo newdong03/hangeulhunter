@@ -212,6 +212,14 @@ html, body {
   animation: cloud-float-1 5.2s ease-in-out infinite;
 }
 
+/* 디버그 모드 진입 트리거. 다른 장식 구름(.start-cloud)은 pointer-events:none
+   그대로 두고, 이 구름만 클릭 가능하게 풀어준다 — 테스트 편의용이라 별도
+   시각 표시는 하지 않는다. */
+#debug-cloud-trigger {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 .start-cloud--2 {
   top: 88%;
   left: 12%;
@@ -1214,9 +1222,9 @@ html, body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 11vh;
-  height: 11vh;
-  margin: -5.5vh 0 0 -5.5vh;
+  width: calc(11vh * var(--burst-scale, 1));
+  height: calc(11vh * var(--burst-scale, 1));
+  margin: calc(-5.5vh * var(--burst-scale, 1)) 0 0 calc(-5.5vh * var(--burst-scale, 1));
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, var(--burst-color, #ffe08a) 40%, rgba(255, 240, 150, 0) 72%);
   opacity: 0;
@@ -1227,9 +1235,9 @@ html, body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 2.2vh;
-  height: 2.2vh;
-  margin: -1.1vh 0 0 -1.1vh;
+  width: calc(2.2vh * var(--burst-scale, 1));
+  height: calc(2.2vh * var(--burst-scale, 1));
+  margin: calc(-1.1vh * var(--burst-scale, 1)) 0 0 calc(-1.1vh * var(--burst-scale, 1));
   border-radius: 50%;
   background: var(--dot-color, #fff);
   box-shadow: 0 0 10px 3px var(--dot-color, #fff);
@@ -1755,6 +1763,362 @@ html, body {
 
 #game4-story2-screen.is-playing .story3-next-button {
   animation: rule-fade-in 0.4s ease-out 1.4s forwards;
+}
+
+/* ---------- 엔딩: 4장의 자모 카드 모으기 ----------
+   야광귀 스토리3(.story3-card)와 같은 카드 비율(294/467)·다음 버튼
+   (.story3-next-button)을 그대로 재사용한다. 4장이 card_1 -> card_2 ->
+   card_3 -> card_5 순서로 하나씩, 위에서 부드럽게 떨어지듯 안착한다
+   (동시에 여러 방향에서 날아오던 이전 연출 대신 순차 등장으로 교체). */
+
+.ending-card-row {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 78%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4.6%;
+  z-index: 5;
+}
+
+.ending-card {
+  width: 16%;
+  aspect-ratio: 294 / 467;
+  opacity: 0;
+}
+
+.ending-card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 6%;
+  object-fit: cover;
+}
+
+/* 카드마다 위쪽에서 살짝 확대된 채 시작해, 무게감 있게 내려와 안착하는
+   순간 아주 미세하게 오버슈트(80% 지점에서 살짝 더 내려갔다 올라옴)했다가
+   멈춘다 — 급하지 않고 고급스러운 "톡" 안착 느낌을 위한 디테일.
+   card_1/card_3은 왼쪽에서, card_2/card_5는 오른쪽에서 아주 살짝
+   비스듬히 떨어지도록 좌우로 번갈아 배치해 네 장이 기계적으로 똑같이
+   움직이는 인상을 피한다. 0.45s 간격으로 하나씩 시작해 순서가 뚜렷하게
+   보이고, 재생 시간 자체도 0.85s로 늘려 느긋한 속도를 낸다. */
+#ending-cards-screen.is-playing .ending-card--1 {
+  animation: ending-card-drop-a 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+#ending-cards-screen.is-playing .ending-card--2 {
+  animation: ending-card-drop-b 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.75s forwards;
+}
+
+#ending-cards-screen.is-playing .ending-card--3 {
+  animation: ending-card-drop-a 0.85s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards;
+}
+
+#ending-cards-screen.is-playing .ending-card--5 {
+  animation: ending-card-drop-b 0.85s cubic-bezier(0.16, 1, 0.3, 1) 1.65s forwards;
+}
+
+@keyframes ending-card-drop-a {
+  0% { opacity: 0; transform: translate(-2.6vw, -38vh) scale(1.14) rotate(-4deg); }
+  55% { opacity: 1; }
+  80% { opacity: 1; transform: translate(0, 1.2vh) scale(0.99) rotate(0.6deg); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+
+@keyframes ending-card-drop-b {
+  0% { opacity: 0; transform: translate(2.6vw, -38vh) scale(1.14) rotate(4deg); }
+  55% { opacity: 1; }
+  80% { opacity: 1; transform: translate(0, 1.2vh) scale(0.99) rotate(-0.6deg); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+
+/* "훈민정음 28자모 완성!" 문구(ending_talk_image_1.png). 마지막 카드
+   (1.65s 딜레이 + 0.85s 재생 = 2.5s 안착)가 자리잡은 뒤 0.5초 정지했다가
+   뜬다(main.js의 ENDING_GLOW_DELAY_MS=3000과 동일한 타이밍). */
+.ending-complete-text {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  width: 34%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+#ending-cards-screen.is-playing .ending-complete-text {
+  animation: rule-fade-in 0.6s ease-out 3s forwards;
+}
+
+/* 다음 버튼은 텍스트/빛 연출이 뜬 직후 나타난다. */
+#ending-cards-screen.is-playing .story3-next-button {
+  animation: rule-fade-in 0.4s ease-out 3.65s forwards;
+}
+
+/* ---------- 엔딩: 요괴들 인사 ----------
+   상단 문구(.story3-title 계열은 카드 화면에서 이미 텍스트로 대체했으므로
+   여기는 이미지 그대로 재사용), 하단에 네 요괴가 순서대로 아래에서
+   올라온다. 각 요괴는 두 겹으로 감싼다 — 바깥(.ending-monster)은 등장
+   연출(아래->위, opacity), 중간(.ending-monster-sway)은 좌우로 흔들리는
+   상시 idle 모션, 안쪽(.char-idle-bounce)은 기존 캐릭터들과 동일한
+   스쿼시&스트레치 모션 — 세 겹 모두 transform을 쓰지만 서로 다른
+   요소에 걸려 있어 충돌하지 않는다. */
+
+.ending-greeting-title {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  width: 34%;
+  height: auto;
+  transform: translateX(-50%);
+  opacity: 0;
+  z-index: 5;
+}
+
+#ending-greeting-screen.is-playing .ending-greeting-title {
+  animation: rule-fade-in 0.6s ease-out 0.1s forwards;
+}
+
+.ending-monster-row {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  width: 86%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 3%;
+  z-index: 5;
+}
+
+.ending-monster {
+  width: 17%;
+  opacity: 0;
+  transform: translateY(14vh);
+}
+
+#ending-greeting-screen.is-playing .ending-monster--1 {
+  animation: ending-monster-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+
+#ending-greeting-screen.is-playing .ending-monster--2 {
+  animation: ending-monster-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+}
+
+#ending-greeting-screen.is-playing .ending-monster--3 {
+  animation: ending-monster-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.8s forwards;
+}
+
+#ending-greeting-screen.is-playing .ending-monster--4 {
+  animation: ending-monster-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 1.1s forwards;
+}
+
+@keyframes ending-monster-rise {
+  from { opacity: 0; transform: translateY(14vh); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 좌우로 은은하게 흔들리는 상시 모션. 네 요괴가 같은 박자로 움직이면
+   부자연스러워서 요괴마다 delay를 다르게 줘 엇갈리게 흔든다. */
+.ending-monster-sway {
+  transform-origin: bottom center;
+  animation: ending-monster-sway 3.4s ease-in-out infinite;
+}
+
+.ending-monster--1 .ending-monster-sway { animation-delay: 0s; }
+.ending-monster--2 .ending-monster-sway { animation-delay: 0.5s; }
+.ending-monster--3 .ending-monster-sway { animation-delay: 0.9s; }
+.ending-monster--4 .ending-monster-sway { animation-delay: 0.3s; }
+
+@keyframes ending-monster-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.ending-monster-img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 다음 버튼은 마지막 요괴(딜레이 1.1s + 재생 0.55s = 1.65s)가 다 올라온 직후 나타난다. */
+#ending-greeting-screen.is-playing .story3-next-button {
+  animation: rule-fade-in 0.4s ease-out 1.9s forwards;
+}
+
+/* ---------- 엔딩: 웹캠 촬영 화면 ----------
+   final_frame.png(1920x1080)는 가운데 사각형만 투명하게 뚫려 있고 나머지는
+   불투명한 삽화라, 비디오를 프레임보다 아래(z-index)에 깔아두면 그 투명한
+   구멍으로만 웹캠 화면이 비쳐 보이고 나머지는 프레임 삽화가 자연스럽게
+   가린다. 구멍의 실측 좌표(원본 픽셀 기준 left 473 / top 170 / width 974 /
+   height 589, 1920x1080 대비 %)를 main.js의 WEBCAM_HOLE 상수와 동일하게
+   맞춰 뒀다 — 둘 중 하나만 바꾸면 미리보기와 실제 캡처 합성 위치가 어긋난다. */
+.webcam-video-wrap {
+  position: absolute;
+  left: 24.6354%;
+  top: 15.7407%;
+  width: 50.7292%;
+  height: 54.537%;
+  overflow: hidden;
+  background: #000;
+  z-index: 3;
+}
+
+.webcam-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* 카메라 화면 특성상 좌우 반전 없이 있는 그대로 보여준다(캡처 결과와
+     미리보기를 동일하게 유지하기 위해 미러링을 걸지 않는다). */
+}
+
+.webcam-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.webcam-error {
+  position: absolute;
+  left: 24.6354%;
+  top: 15.7407%;
+  width: 50.7292%;
+  height: 54.537%;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6%;
+  background: rgba(10, 10, 20, 0.72);
+  color: #fff6c9;
+  font-size: 2vh;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+/* display:flex가 선언되어 있으면 author 규칙이 항상 UA 기본 규칙인
+   [hidden]{display:none}보다 우선하므로, 위 규칙만으로는 hidden 속성이
+   켜져 있어도 실제로 숨겨지지 않는다(카메라가 정상일 때도 영상 위에
+   이 어두운 박스가 항상 떠 있던 원인). hidden일 때는 반드시 다시
+   display:none으로 되돌려야 한다. */
+.webcam-error[hidden] {
+  display: none;
+}
+
+.webcam-photo-button {
+  position: absolute;
+  bottom: 4.5%;
+  left: 50%;
+  width: 11%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 10;
+}
+
+.webcam-photo-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.webcam-photo-button:hover {
+  transform: translateX(-50%) scale(1.06);
+}
+
+.webcam-photo-button:active {
+  transform: translateX(-50%) scale(0.94);
+}
+
+.webcam-photo-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ---------- 엔딩: 촬영 결과 확인 화면 ----------
+   합성 캡처 결과(final_frame.png 포함)가 그 자체로 16:9 비율이라 프레임을
+   그 비율로 고정해 중앙에 크게 띄운다. */
+.photo-result-frame {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: 58%;
+  aspect-ratio: 16 / 9;
+  transform: translate(-50%, -50%);
+  border-radius: 2%;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 1.2vh 3vh rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  z-index: 5;
+}
+
+#photo-result-screen.is-playing .photo-result-frame {
+  animation: rule-fade-in 0.5s ease-out 0.1s forwards;
+}
+
+.photo-result-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.photo-result-buttons {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  width: 46%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6%;
+  opacity: 0;
+  z-index: 10;
+}
+
+#photo-result-screen.is-playing .photo-result-buttons {
+  animation: rule-fade-in 0.4s ease-out 0.5s forwards;
+}
+
+.photo-result-button {
+  width: 47%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.photo-result-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.photo-result-button:hover {
+  transform: scale(1.06);
+}
+
+.photo-result-button:active {
+  transform: scale(0.94);
 }
 
 /* ---------- 반응형 (모바일) ---------- */
