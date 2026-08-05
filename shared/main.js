@@ -154,6 +154,22 @@ document.addEventListener("DOMContentLoaded", () => {
     screen.appendChild(createCommonUiButtons());
   });
 
+  // ---------- 시작화면 버전1 <-> 버전2 토글 ----------
+  // #start-screen에 is-v2 클래스만 껐다 켰다 한다 — 버전별 레이아웃 차이는
+  // style.css의 자손 선택자(#start-screen.is-v2 ...)가 전부 처리하므로,
+  // 여기서는 클릭할 때마다 클래스 유무만 뒤집으면 된다. 게임시작 버튼
+  // 동작·cloud1 디버그 트리거는 두 버전이 같은 DOM 요소를 공유하므로
+  // (버전2에서 위치/크기만 CSS로 달라질 뿐) 별도 처리 없이 그대로 유지된다.
+  const startVersionToggle = document.getElementById("start-version-toggle");
+  startVersionToggle.addEventListener("click", () => {
+    const isV2 = startScreen.classList.toggle("is-v2");
+    if (isV2) {
+      startFloatClouds();
+    } else {
+      stopFloatClouds();
+    }
+  });
+
   // ---------- 1단계 -> 2단계 ----------
   startButton.addEventListener("click", () => {
     console.log("게임 시작");
@@ -517,6 +533,150 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMap();
   });
 
+  // ---------- 시작화면 버전2: 구름(cloud1~4) 자유 유영 애니메이션 ----------
+  // CSS 키프레임은 정해진 왕복 경로만 반복할 수 있어 "화면 안을 랜덤한
+  // 방향/속도로 떠다니다 경계에서 반사"하는 움직임은 표현할 수 없다.
+  // 그래서 requestAnimationFrame으로 각 구름의 위치(%)·속도(%/s)를 직접
+  // 갱신하고, 화면(.screen) 경계에 닿으면 해당 축의 속도 부호만 뒤집어
+  // 반사시킨다(속도 크기는 그대로라 튕기는 순간도 매끄럽게 이어진다).
+  // cloud1(#debug-cloud-trigger)은 버전1과 공유하는 요소라 이 루프는
+  // 버전2가 활성화된 동안만 돌리고, 버전1로 돌아가면 인라인 스타일을
+  // 지워 기존 CSS 위치·bobbing 애니메이션(.start-cloud--1)으로 되돌린다.
+  // 클릭 핸들러는 위 블록에서 이미 같은 엘리먼트에 걸려 있으므로, 이동
+  // 중에도 디버그 모드 진입 기능은 그대로 유지된다.
+  //
+  // [떨림(jitter) 수정] 이전 버전은 매 프레임 el.style.left/top(%)을
+  // 썼는데, left/top은 레이아웃 속성이라 쓸 때마다 리플로우가 일어나고
+  // 브라우저가 그 값을 정수 디바이스 픽셀로 반올림한다 — 여기에 transform
+  // (translate(-50%,-50%))까지 매 프레임 다시 계산되면서 두 단계의
+  // 반올림 오차가 프레임마다 다르게 섞여 미세하게 떨려 보였다. 이제는
+  // 요소를 컨테이너 원점(left:0/top:0)에 고정해두고, 실제 이동은 오직
+  // transform(합성 전용 속성, 리플로우 없이 서브픽셀 그대로 그려짐)만으로
+  // 처리한다 — translate()는 순서를 바꿔도 결과가 같은 순수 이동이라
+  // translate(-50%,-50%)(자기 크기 기준 중앙 정렬) 뒤에 translate(px,px)
+  // (컨테이너 기준 절대 위치)를 그대로 이어 붙일 수 있다.
+  const FLOAT_CLOUD_CONFIG = [
+    { el: debugCloudTrigger, speed: 2.7 },
+    { el: document.querySelector(".start-v2-cloud--2"), speed: 2.3 },
+    { el: document.querySelector(".start-v2-cloud--3"), speed: 3.1 },
+    { el: document.querySelector(".start-v2-cloud--4"), speed: 2.5 },
+  ].filter((cloud) => cloud.el);
+
+  let floatCloudsState = null;
+  let floatCloudsRafId = null;
+  let floatCloudsLastTs = null;
+  let floatCloudsContainerRect = null;
+
+  function refreshFloatCloudsContainerRect() {
+    floatCloudsContainerRect = startScreen.getBoundingClientRect();
+  }
+
+  window.addEventListener("resize", () => {
+    if (floatCloudsState) refreshFloatCloudsContainerRect();
+  });
+
+  function initFloatClouds() {
+    refreshFloatCloudsContainerRect();
+    const screenRect = floatCloudsContainerRect;
+    floatCloudsState = FLOAT_CLOUD_CONFIG.map(({ el, speed }) => {
+      const elRect = el.getBoundingClientRect();
+      const halfW = ((elRect.width / screenRect.width) * 100) / 2;
+      const halfH = ((elRect.height / screenRect.height) * 100) / 2;
+      const x = ((elRect.left - screenRect.left + elRect.width / 2) / screenRect.width) * 100;
+      const y = ((elRect.top - screenRect.top + elRect.height / 2) / screenRect.height) * 100;
+      const angle = Math.random() * Math.PI * 2;
+
+      // 지금부터는 left/top이 아니라 transform만으로 이동시키므로,
+      // 레이아웃 상 위치는 컨테이너 원점에 고정해둔다(시각적 위치는
+      // 아래 stepFloatClouds가 매기는 translate(px,px)가 전부 담당한다 —
+      // 지금 읽은 x/y가 곧 현재 화면에 보이는 위치이므로 전환 시 튐은 없다).
+      el.style.left = "0";
+      el.style.top = "0";
+
+      return {
+        el,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        halfW,
+        halfH,
+      };
+    });
+  }
+
+  function stepFloatClouds(dtSeconds) {
+    const containerRect = floatCloudsContainerRect;
+    floatCloudsState.forEach((cloud) => {
+      cloud.x += cloud.vx * dtSeconds;
+      cloud.y += cloud.vy * dtSeconds;
+
+      const minX = cloud.halfW;
+      const maxX = 100 - cloud.halfW;
+      const minY = cloud.halfH;
+      const maxY = 100 - cloud.halfH;
+
+      if (cloud.x < minX) {
+        cloud.x = minX;
+        cloud.vx = Math.abs(cloud.vx);
+      } else if (cloud.x > maxX) {
+        cloud.x = maxX;
+        cloud.vx = -Math.abs(cloud.vx);
+      }
+
+      if (cloud.y < minY) {
+        cloud.y = minY;
+        cloud.vy = Math.abs(cloud.vy);
+      } else if (cloud.y > maxY) {
+        cloud.y = maxY;
+        cloud.vy = -Math.abs(cloud.vy);
+      }
+
+      const pxX = (cloud.x / 100) * containerRect.width;
+      const pxY = (cloud.y / 100) * containerRect.height;
+      cloud.el.style.transform = `translate(-50%, -50%) translate(${pxX}px, ${pxY}px)`;
+    });
+  }
+
+  function floatCloudsLoop(ts) {
+    if (floatCloudsLastTs === null) floatCloudsLastTs = ts;
+    // 탭이 백그라운드에 있다 돌아오는 등 큰 시간 간격이 튀는 경우를 대비해
+    // 델타를 짧게 캡핑한다 — 없으면 순간이동하듯 한 번에 크게 튈 수 있다.
+    const dtSeconds = Math.min((ts - floatCloudsLastTs) / 1000, 0.1);
+    floatCloudsLastTs = ts;
+    stepFloatClouds(dtSeconds);
+    floatCloudsRafId = requestAnimationFrame(floatCloudsLoop);
+  }
+
+  function startFloatClouds() {
+    if (floatCloudsRafId !== null) return;
+    if (!floatCloudsState) initFloatClouds();
+    floatCloudsLastTs = null;
+    floatCloudsRafId = requestAnimationFrame(floatCloudsLoop);
+  }
+
+  // 시작화면은 버전2를 기본값으로 보여준다(index.html의 #start-screen에
+  // is-v2 클래스가 이미 붙어 있음) — 그래서 토글 버튼을 누르기 전에도
+  // 구름 애니메이션이 곧장 돌아야 한다.
+  if (startScreen.classList.contains("is-v2")) {
+    startFloatClouds();
+  }
+
+  function stopFloatClouds() {
+    if (floatCloudsRafId !== null) {
+      cancelAnimationFrame(floatCloudsRafId);
+      floatCloudsRafId = null;
+    }
+    // 버전1로 돌아가면 인라인 top/left/transform을 지워 CSS 기본값
+    // (.start-cloud--1의 위치 + cloud-float-1 bobbing)으로 되돌린다.
+    if (debugCloudTrigger) {
+      debugCloudTrigger.style.left = "";
+      debugCloudTrigger.style.top = "";
+      debugCloudTrigger.style.transform = "";
+    }
+    floatCloudsState = null;
+  }
+
   // ---------- 야광귀 룰 설명 화면 ----------
   game1ChallengeButton.addEventListener("click", () => {
     console.log("야광귀 게임 시작");
@@ -562,7 +722,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correct: "a",
     },
     {
-      character: "ms_dk_fly",
+      character: "ms_dk_play",
       talk: "talk_dk_quiz2",
       talkAlt: "도깨비 대사",
       optionAImg: "game4_quizA_2",
@@ -572,7 +732,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correct: "b",
     },
     {
-      character: "ms_dk_basic",
+      character: "ms_dk_bag",
       talk: "talk_dk_quiz3",
       talkAlt: "도깨비 대사",
       optionAImg: "game4_quizA_3",

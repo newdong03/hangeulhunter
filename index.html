@@ -8,31 +8,49 @@
 </head>
 <body>
 
-<div class="screen" id="start-screen">
+<div class="screen is-v2" id="start-screen">
   <img class="bg" src="asset/image/Background_step1_back.png" alt="배경">
 
   <img class="start-cloud-drift" src="asset/image/Background_step1_cloud.png" alt="">
 
   <div class="firefly-layer" id="start-firefly-layer"></div>
 
+  <button class="start-version-toggle" id="start-version-toggle" type="button">
+    <img src="asset/image/logo_symbol.png" alt="시작화면 버전 전환">
+  </button>
+
   <img class="start-cloud start-cloud--1" id="debug-cloud-trigger" src="asset/image/cloud1.png" alt="">
-  <div class="monster-wrap monster-wrap--tl">
-    <img class="monster" src="asset/image/ms_yg_fly.png" alt="야광귀">
+
+  <div class="start-v1-only" id="start-v1-only">
+    <div class="monster-wrap monster-wrap--tl">
+      <img class="monster" src="asset/image/ms_yg_fly.png" alt="야광귀">
+    </div>
+
+    <img class="start-cloud start-cloud--2" src="asset/image/cloud2.png" alt="">
+    <div class="monster-wrap monster-wrap--bl">
+      <img class="monster" src="asset/image/ms_gs_fly.png" alt="그슨대">
+    </div>
+
+    <img class="start-cloud start-cloud--3" src="asset/image/cloud3.png" alt="">
+    <div class="monster-wrap monster-wrap--tr">
+      <img class="monster" src="asset/image/ms_bs_fly.png" alt="불가살이">
+    </div>
+
+    <img class="start-cloud start-cloud--4" src="asset/image/cloud4.png" alt="">
+    <div class="monster-wrap monster-wrap--br">
+      <img class="monster" src="asset/image/ms_dk_fly.png" alt="도깨비">
+    </div>
   </div>
 
-  <img class="start-cloud start-cloud--2" src="asset/image/cloud2.png" alt="">
-  <div class="monster-wrap monster-wrap--bl">
-    <img class="monster" src="asset/image/ms_gs_fly.png" alt="그슨대">
-  </div>
+  <div class="start-v2-only" id="start-v2-only">
+    <img class="start-v2-cloud start-v2-cloud--2" src="asset/image/cloud2.png" alt="">
+    <img class="start-v2-cloud start-v2-cloud--3" src="asset/image/cloud3.png" alt="">
+    <img class="start-v2-cloud start-v2-cloud--4" src="asset/image/cloud4.png" alt="">
 
-  <img class="start-cloud start-cloud--3" src="asset/image/cloud3.png" alt="">
-  <div class="monster-wrap monster-wrap--tr">
-    <img class="monster" src="asset/image/ms_bs_fly.png" alt="불가살이">
-  </div>
-
-  <img class="start-cloud start-cloud--4" src="asset/image/cloud4.png" alt="">
-  <div class="monster-wrap monster-wrap--br">
-    <img class="monster" src="asset/image/ms_dk_fly.png" alt="도깨비">
+    <div class="start-v2-char-breathe">
+      <img class="start-v2-character1" src="asset/image/character1.png" alt="">
+    </div>
+    <img class="start-v2-handwall" src="asset/image/character2_handwall.png" alt="">
   </div>
 
   <img class="logo-typo" src="asset/image/logo_typo.png" alt="한글사냥꾼">
