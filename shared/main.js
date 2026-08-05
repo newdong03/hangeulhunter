@@ -3,18 +3,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const startScreen = document.getElementById("start-screen");
   const characterScreen = document.getElementById("character-screen");
   const mapScreen = document.getElementById("map-screen");
+  const game1IntroNextButton = document.getElementById("game1-intro-next-button");
   const game1RuleScreen = document.getElementById("game1-rule-screen");
   const game1ChallengeButton = document.getElementById("game1-challenge-button");
   const game1PlayScreen = document.getElementById("game1-play-screen");
+  const game2IntroNextButton = document.getElementById("game2-intro-next-button");
   const game2RuleScreen = document.getElementById("game2-rule-screen");
   const game2ChallengeButton = document.getElementById("game2-challenge-button");
   const game2PlayScreen = document.getElementById("game2-play-screen");
   const game2HiddenLayer = document.getElementById("game2-hidden-layer");
   const game2Mission = document.getElementById("game2-mission");
   const game2MissionFind = document.getElementById("game2-mission-find");
+  const game3IntroNextButton = document.getElementById("game3-intro-next-button");
   const game3RuleScreen = document.getElementById("game3-rule-screen");
   const game3ChallengeButton = document.getElementById("game3-challenge-button");
   const game3PlayScreen = document.getElementById("game3-play-screen");
+  const game4IntroNextButton = document.getElementById("game4-intro-next-button");
   const game4RuleScreen = document.getElementById("game4-rule-screen");
   const game4ChallengeButton = document.getElementById("game4-challenge-button");
   const game4PlayScreen = document.getElementById("game4-play-screen");
@@ -211,8 +215,12 @@ document.addEventListener("DOMContentLoaded", () => {
     { key: "bulgasari", name: "불가살이", asset: "stage_3", top: 60.9, left: 59.4 },
     { key: "dokkaebi", name: "도깨비", asset: "stage_4", top: 70.1, left: 81.1 },
   ];
-  // 발판 클릭 시 이동할 룰 설명/게임 화면. 아직 만들지 않은 스테이지는 매핑이 없어
-  // 기존처럼 콘솔 로그만 찍힌다.
+  // 발판 클릭 시 이동할 화면. 게임 소개(인트로)와 룰 설명은 이제 배경을
+  // 공유하는 하나의 .screen(gameN-rule-screen)에 콘텐츠 레이어 두 개로
+  // 합쳐져 있다 — 처음엔 인트로 레이어가 보이고, 그 안의 "다음" 버튼이
+  // is-rule-active 클래스만 붙여 룰 레이어로 크로스페이드시킨다(아래
+  // game1~4IntroNextButton 리스너 참고). 아직 만들지 않은 스테이지는
+  // 매핑이 없어 기존처럼 콘솔 로그만 찍힌다.
   const STAGE_SCREENS = {
     yagwanggwi: game1RuleScreen,
     geuseundae: game2RuleScreen,
@@ -360,6 +368,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const targetScreen = STAGE_SCREENS[stage.key];
         if (targetScreen) {
+          // 맵에서 새로 들어올 때는 항상 인트로 레이어부터 다시 보여준다
+          // (예전에 이 스테이지를 이미 룰 설명까지 봤어도 처음부터 다시).
+          targetScreen.classList.remove("is-rule-active");
           changeScreen(targetScreen, { animate: true });
         }
         // TODO: 나머지 스테이지 게임 화면 연결 예정
@@ -676,6 +687,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     floatCloudsState = null;
   }
+
+  // ---------- 게임별 소개(인트로) 화면 ----------
+  // 요괴맵 스테이지 클릭 -> (인트로 콘텐츠) -> "다음" 클릭 -> 기존 룰
+  // 설명 콘텐츠부터 원래 진행 과정 그대로. 인트로/룰 설명은 이제 화면
+  // 전환이 아니라 같은 .screen 안 콘텐츠 레이어 크로스페이드라, 배경은
+  // 전혀 다시 그려지지 않고 is-rule-active 클래스 하나로 전환된다
+  // (style.css의 .rule-content-layer 참고). 룰 설명 화면 쪽 로직
+  // (도전 버튼 등)은 전혀 건드리지 않는다.
+  game1IntroNextButton.addEventListener("click", () => {
+    game1RuleScreen.classList.add("is-rule-active");
+  });
+  game2IntroNextButton.addEventListener("click", () => {
+    game2RuleScreen.classList.add("is-rule-active");
+  });
+  game3IntroNextButton.addEventListener("click", () => {
+    game3RuleScreen.classList.add("is-rule-active");
+  });
+  game4IntroNextButton.addEventListener("click", () => {
+    game4RuleScreen.classList.add("is-rule-active");
+  });
 
   // ---------- 야광귀 룰 설명 화면 ----------
   game1ChallengeButton.addEventListener("click", () => {
@@ -2216,10 +2247,24 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(message);
       }
 
-      const imageUrl = result.data.url;
+      const imageUrl = result && result.data && result.data.url;
+      if (!imageUrl) {
+        // imgbb가 success:true를 주고도 예상한 위치에 url이 없는 경우(응답
+        // 구조가 바뀌는 등) — 원인을 콘솔에서 바로 구분할 수 있게 남겨둔다.
+        console.error("[QR] imgbb 응답에 data.url이 없습니다:", result);
+        throw new Error("이미지 URL을 응답에서 찾지 못했습니다.");
+      }
       console.log("[QR] 업로드 성공 - 이미지 URL:", imageUrl);
 
-      // QRCode는 index.html에서 불러온 qrcodejs(cdnjs) 라이브러리가 전역으로 제공한다.
+      // QRCode는 index.html에서 불러온 qrcodejs(cdnjs) 라이브러리가 전역으로
+      // 제공한다 — CDN 로드가 막히면(네트워크 차단 등) 이 전역이 아예
+      // 없으므로, new QRCode(...)가 막연한 ReferenceError를 던지기 전에
+      // 먼저 확인해서 콘솔에 원인을 명확히 남긴다.
+      if (typeof QRCode === "undefined") {
+        console.error("[QR] QRCode 라이브러리(cdnjs)가 로드되지 않았습니다.");
+        throw new Error("QR코드 라이브러리를 불러오지 못했습니다.");
+      }
+
       new QRCode(qrCodeBox, {
         text: imageUrl,
         width: QR_CODE_PIXEL_SIZE,
@@ -2230,7 +2275,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setQrScreenState("success");
     } catch (error) {
       console.error("[QR] 사진 업로드/QR 생성 중 오류:", error);
-      qrError.textContent = "사진을 업로드하는 중 문제가 생겼어요.\n네트워크 연결을 확인하고 다시 시도해주세요.";
+      qrError.textContent = "저장에 실패했습니다. 다시 시도해주세요.\n(네트워크 연결을 확인해주세요)";
       setQrScreenState("error");
     }
   }
