@@ -57,6 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
     screens.forEach((s) => {
       s.hidden = s !== screen;
     });
+
+    playBgm(getBgmKeyForScreen(screen));
   }
 
   // 등장 애니메이션은 CSS의 "is-playing" 클래스 여부로 재생된다.
@@ -79,7 +81,132 @@ document.addEventListener("DOMContentLoaded", () => {
   // 한 번만 만들어서 각 화면에 주입한다.
 
   let screenHistory = []; // 실제로 밟아온 화면 순서 스택. 뒤로가기는 여기서 pop한다.
-  let soundOn = true; // 사운드 on/off 상태. 아직 실제 재생 로직은 없고, 나중에 배경음/효과음을 붙일 때 이 값을 참조하면 된다.
+  let soundOn = true; // 사운드 on/off 상태. button_sound_on/off 토글 버튼과 사운드 시스템(setSoundMuted)이 함께 참조한다.
+
+  // ---------- 사운드 시스템 (BGM + 효과음) ----------
+  // sound/ 폴더의 실제 파일과 1:1로 매핑한다. BGM(game_bgm, game_bgm2)은 화면을
+  // 옮길 때마다 새로 만들지 않고, 같은 키가 이미 재생 중이면 아무것도 하지
+  // 않는다(끊김/재시작 없이 계속 이어지도록). 다른 키로 바뀔 때만 짧게
+  // 크로스페이드하며 전환한다. 효과음은 매번 새 Audio 인스턴스를 만들어
+  // BGM 위에 겹쳐(믹싱) 재생하고, 재생이 끝나면 알아서 정리된다.
+  const SOUND_BASE_PATH = "sound/";
+  const SOUND_FILES = {
+    game_bgm: "game_bgm.mp3",
+    game_bgm2: "game_bgm2.mp3",
+    game_click: "game_click.wav",
+    game_click_2: "game_click_2.wav",
+    introcard: "introcard.mp3",
+    yg_basic: "yg_basic.mp3",
+    gs_basic: "gs_basic.mp3",
+    bs_basic: "bs_basic.mp3",
+    dk_basic: "dk_basic.mp3",
+    yg_success: "yg_success.mp3",
+    yg_fail: "yg_fail.mp3",
+    ng: "ng.wav",
+    clear_sound1: "clear_sound1.wav",
+    clear_sound2: "clear_sound2.wav",
+    card_sound: "card_sound.wav",
+    gs_fail: "gs_fail.mp3",
+    gs_surprise: "gs_surprise.mp3",
+    bs_happy: "bs_happy.mp3",
+    drop_success: "drop_success.mp3",
+    bs_fail: "bs_fail.mp3",
+    bs_sad: "bs_sad.mp3",
+    dk_success: "dk_success.mp3",
+    quiz_o: "quiz_o.wav",
+    dk_fail: "dk_fail.mp3",
+    camera: "camera.mp3",
+  };
+
+  const BGM_CROSSFADE_MS = 500; // 이전 BGM이 사라지고 새 BGM이 차오르는 시간
+
+  let masterSoundOn = true; // soundOn과 항상 동기화되는 사운드 시스템 내부 상태
+  let currentBgmKey = null;
+  let currentBgmAudio = null;
+  const activeSfxAudios = new Set(); // 재생 중인 효과음들 - 음소거 토글 시 즉시 반영하기 위해 추적
+
+  function getSoundSrc(key) {
+    return `${SOUND_BASE_PATH}${SOUND_FILES[key]}`;
+  }
+
+  // requestAnimationFrame으로 volume을 from -> to까지 선형으로 훑는다.
+  // 게임 곳곳의 다른 애니메이션들(sparkle 등)과 같은 기법이라 별도 라이브러리 없이 처리 가능하다.
+  function fadeAudioVolume(audio, from, to, durationMs, onDone) {
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - startTime) / durationMs);
+      audio.volume = from + (to - from) * t;
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else if (onDone) {
+        onDone();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function playBgm(key) {
+    if (!SOUND_FILES[key] || key === currentBgmKey) return; // 이미 그 BGM이 재생 중이면 끊지 않고 그대로 둔다
+
+    const prevAudio = currentBgmAudio;
+    currentBgmKey = key;
+
+    const audio = new Audio(getSoundSrc(key));
+    audio.loop = true;
+    audio.muted = !masterSoundOn;
+    audio.volume = 0;
+    currentBgmAudio = audio;
+
+    audio.play().catch(() => {
+      // 브라우저 자동재생 정책으로 막힌 경우 - 아래 unlockAudioOnUserGesture가
+      // 최초 사용자 입력 시 다시 재생을 시도한다.
+    });
+    fadeAudioVolume(audio, 0, 1, BGM_CROSSFADE_MS);
+
+    if (prevAudio) {
+      fadeAudioVolume(prevAudio, prevAudio.volume, 0, BGM_CROSSFADE_MS, () => {
+        prevAudio.pause();
+        prevAudio.currentTime = 0;
+      });
+    }
+  }
+
+  function playSfx(key) {
+    if (!SOUND_FILES[key]) return;
+    const audio = new Audio(getSoundSrc(key));
+    audio.muted = !masterSoundOn;
+    activeSfxAudios.add(audio);
+    audio.addEventListener("ended", () => activeSfxAudios.delete(audio));
+    audio.play().catch(() => {});
+  }
+
+  function setSoundMuted(muted) {
+    masterSoundOn = !muted;
+    if (currentBgmAudio) currentBgmAudio.muted = muted;
+    activeSfxAudios.forEach((audio) => {
+      audio.muted = muted;
+    });
+  }
+
+  // 자동재생 정책 때문에 페이지 로드 직후 BGM 재생이 막혔을 수 있으므로,
+  // 사용자의 첫 클릭/터치에서 한 번만 재생을 다시 시도한다.
+  function unlockAudioOnUserGesture() {
+    if (currentBgmAudio && currentBgmAudio.paused && masterSoundOn) {
+      currentBgmAudio.play().catch(() => {});
+    }
+    document.removeEventListener("pointerdown", unlockAudioOnUserGesture);
+  }
+  document.addEventListener("pointerdown", unlockAudioOnUserGesture);
+
+  // 화면 id 접두어 기준으로 어떤 BGM을 틀지 정한다. 시작화면 ~ 요괴맵, 엔딩/웹캠
+  // 구간은 game_bgm, 각 게임의 소개~플레이~클리어 스토리 구간은 game_bgm2.
+  const BGM2_SCREEN_ID_PREFIXES = ["game1-", "game2-", "game3-", "game4-", "yagwanggwi-story"];
+
+  function getBgmKeyForScreen(screen) {
+    if (!screen) return "game_bgm";
+    const isBgm2 = BGM2_SCREEN_ID_PREFIXES.some((prefix) => screen.id.startsWith(prefix));
+    return isBgm2 ? "game_bgm2" : "game_bgm";
+  }
 
   function getVisibleScreen() {
     return Array.from(screens).find((s) => !s.hidden) || null;
@@ -105,18 +232,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function goBackScreen() {
+    playSfx("game_click");
     const previous = screenHistory.pop();
     showScreen(previous || startScreen);
   }
 
   function goHomeScreen() {
+    playSfx("game_click");
     screenHistory = [];
     showScreen(startScreen);
   }
 
-  function toggleSound(soundImg) {
+  // 사운드 버튼은 화면마다 하나씩(createCommonUiButtons) 새로 만들어지므로,
+  // 토글 시 지금 보이는 버튼뿐 아니라 다른 화면에 있는 버튼들도 함께
+  // on/off 아이콘이 맞게 갱신되도록 전부 이 배열에 모아둔다.
+  const soundToggleImages = [];
+
+  function toggleSound() {
     soundOn = !soundOn;
-    soundImg.src = `asset/image/button_sound_${soundOn ? "on" : "off"}.png`;
+    soundToggleImages.forEach((img) => {
+      img.src = `asset/image/button_sound_${soundOn ? "on" : "off"}.png`;
+    });
+    setSoundMuted(!soundOn);
     console.log(soundOn ? "사운드 켜짐" : "사운드 꺼짐");
   }
 
@@ -143,7 +280,8 @@ document.addEventListener("DOMContentLoaded", () => {
     soundImg.src = `asset/image/button_sound_${soundOn ? "on" : "off"}.png`;
     soundImg.alt = "사운드 켜기/끄기";
     soundBtn.appendChild(soundImg);
-    soundBtn.addEventListener("click", () => toggleSound(soundImg));
+    soundToggleImages.push(soundImg);
+    soundBtn.addEventListener("click", toggleSound);
 
     fragment.appendChild(backBtn);
     fragment.appendChild(homeBtn);
@@ -158,6 +296,11 @@ document.addEventListener("DOMContentLoaded", () => {
     screen.appendChild(createCommonUiButtons());
   });
 
+  // 시작화면은 showScreen()을 거치지 않고 이미 HTML에 보이는 상태로 시작하므로,
+  // 여기서 최초 BGM 재생을 직접 트리거한다(자동재생이 막히면
+  // unlockAudioOnUserGesture가 첫 클릭/터치에서 재시도한다).
+  playBgm("game_bgm");
+
   // ---------- 시작화면 버전1 <-> 버전2 토글 ----------
   // #start-screen에 is-v2 클래스만 껐다 켰다 한다 — 버전별 레이아웃 차이는
   // style.css의 자손 선택자(#start-screen.is-v2 ...)가 전부 처리하므로,
@@ -166,6 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // (버전2에서 위치/크기만 CSS로 달라질 뿐) 별도 처리 없이 그대로 유지된다.
   const startVersionToggle = document.getElementById("start-version-toggle");
   startVersionToggle.addEventListener("click", () => {
+    playSfx("game_click");
     const isV2 = startScreen.classList.toggle("is-v2");
     if (isV2) {
       startFloatClouds();
@@ -176,6 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- 1단계 -> 2단계 ----------
   startButton.addEventListener("click", () => {
+    playSfx("game_click_2");
     console.log("게임 시작");
     charCards.forEach((c) => c.classList.remove("is-selected"));
     selectedCharacter = null;
@@ -184,9 +329,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- 2단계: 캐릭터 선택 -> 3단계(요괴맵) ----------
   charCards.forEach((card) => {
+    card.addEventListener("mouseenter", () => playSfx("game_click"));
+
     card.addEventListener("click", () => {
       if (selectedCharacter) return; // 선택 후 중복 클릭 방지
 
+      playSfx("game_click_2");
       const character = card.dataset.character;
       selectedCharacter = character;
       window.selectedCharacter = character; // 이후 화면에서 계속 사용
@@ -364,6 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // 있게 조건을 풀어준다.
         const isClickable = wrap.dataset.status === "select" || (debugModeActive && wrap.dataset.status === "on");
         if (!isClickable) return; // off 상태(또는 일반 모드의 on)는 반응 없음
+        playSfx("game_click_2");
         console.log(`스테이지 이동: ${stage.name}`);
 
         const targetScreen = STAGE_SCREENS[stage.key];
@@ -372,6 +521,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // (예전에 이 스테이지를 이미 룰 설명까지 봤어도 처음부터 다시).
           targetScreen.classList.remove("is-rule-active");
           changeScreen(targetScreen, { animate: true });
+          playSfx("introcard");
         }
         // TODO: 나머지 스테이지 게임 화면 연결 예정
       });
@@ -495,6 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 스테이지를 클리어 처리하고 요괴맵으로 돌아간다. 방금 클리어한 스테이지 다음
   // 구간이 있으면 점프 연출을, 없으면(마지막 스테이지) 평소처럼 정적으로 보여준다.
   function clearStageAndReturnToMap(stageKey) {
+    playSfx("game_click");
     clearedStages[stageKey] = true;
     resetHistoryAndShow(mapScreen);
 
@@ -696,20 +847,29 @@ document.addEventListener("DOMContentLoaded", () => {
   // (style.css의 .rule-content-layer 참고). 룰 설명 화면 쪽 로직
   // (도전 버튼 등)은 전혀 건드리지 않는다.
   game1IntroNextButton.addEventListener("click", () => {
+    playSfx("game_click");
+    playSfx("yg_basic");
     game1RuleScreen.classList.add("is-rule-active");
   });
   game2IntroNextButton.addEventListener("click", () => {
+    playSfx("game_click");
+    playSfx("gs_basic");
     game2RuleScreen.classList.add("is-rule-active");
   });
   game3IntroNextButton.addEventListener("click", () => {
+    playSfx("game_click");
+    playSfx("bs_basic");
     game3RuleScreen.classList.add("is-rule-active");
   });
   game4IntroNextButton.addEventListener("click", () => {
+    playSfx("game_click");
+    playSfx("dk_basic");
     game4RuleScreen.classList.add("is-rule-active");
   });
 
   // ---------- 야광귀 룰 설명 화면 ----------
   game1ChallengeButton.addEventListener("click", () => {
+    playSfx("game_click");
     console.log("야광귀 게임 시작");
     resetGame1();
     changeScreen(game1PlayScreen);
@@ -718,6 +878,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- 그슨대 룰 설명 화면 ----------
   game2ChallengeButton.addEventListener("click", () => {
+    playSfx("game_click");
     console.log("그슨대 게임 시작");
     resetGame2();
     changeScreen(game2PlayScreen);
@@ -725,6 +886,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- 불가살이 룰 설명 화면 ----------
   game3ChallengeButton.addEventListener("click", () => {
+    playSfx("game_click");
     console.log("불가살이 게임 시작");
     changeScreen(game3PlayScreen);
     startGame3();
@@ -732,6 +894,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- 도깨비 룰 설명 화면 ----------
   game4ChallengeButton.addEventListener("click", () => {
+    playSfx("game_click");
     console.log("도깨비 게임 시작");
     resetGame4Quiz();
     changeScreen(game4PlayScreen, { animate: true });
@@ -809,6 +972,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // 야광귀 게임의 정답 파티클(createSparkleBurst)을 같은 톤(#ffe08a)으로
   // 짧게 보여준 뒤, 잠깐 텀을 두고서야 다음 문제(또는 클리어)로 넘어간다.
   function handleGame4Correct(buttonEl) {
+    playSfx("dk_success");
+    playSfx("quiz_o");
     buttonEl.classList.remove("is-correct");
     void buttonEl.offsetWidth; // 리플로우시켜 연속 정답에도 강조 연출이 매번 재생되게 함
     buttonEl.classList.add("is-correct");
@@ -829,6 +994,7 @@ document.addEventListener("DOMContentLoaded", () => {
     game4QuizIndex += 1;
 
     if (game4QuizIndex >= GAME4_QUIZZES.length) {
+      playSfx("clear_sound1");
       console.log("도깨비 퀴즈 3문제 모두 정답! 여린히읗 획득 스토리 화면으로 이동");
       goToGame4Clear();
       return;
@@ -847,6 +1013,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // 붉은 화면 플래시(is-fire-hit)도 함께 재사용한다. 다시 선택할 수 있도록
   // 화면 전환 없이 같은 문제를 그대로 유지한다.
   function handleGame4Wrong() {
+    playSfx("dk_fail");
+    playSfx("ng");
     game4PlayScreen.classList.remove("is-shaking");
     void game4PlayScreen.offsetWidth;
     game4PlayScreen.classList.add("is-shaking");
@@ -897,6 +1065,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let game3LastSpawnX = null; // 직전에 스폰한 아이템의 x좌표(%) — 연달아 같은 자리에 몰리지 않게 참고한다
   let game3SteelSpawnCount = 0; // 쇠/불 스폰 비율을 50:50에 가깝게 자기보정하기 위한 누적 카운트
   let game3FireSpawnCount = 0;
+  let game3FireCatchCount = 0; // 실제로 불을 받은(담은) 횟수 - 2회 이상부터 bs_sad+ng를 추가로 재생한다
   const game3KeysPressed = { left: false, right: false };
 
   function setGame3CharacterFace(face) {
@@ -933,6 +1102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     game3LastSpawnX = null;
     game3SteelSpawnCount = 0;
     game3FireSpawnCount = 0;
+    game3FireCatchCount = 0;
   }
 
   function scheduleGame3Spawn() {
@@ -1019,6 +1189,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleGame3SteelCatch(item) {
+    playSfx("bs_happy");
+    playSfx("drop_success");
+
     item.el.classList.add("is-caught");
     setTimeout(() => item.el.remove(), 300);
 
@@ -1032,6 +1205,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateGame3Count();
 
     if (game3SteelCount >= GAME3_STEEL_GOAL) {
+      playSfx("clear_sound1");
       console.log("불가살이 클리어!");
       stopGame3();
       setTimeout(goToGame3Clear, GAME3_CLEAR_ADVANCE_MS);
@@ -1039,6 +1213,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleGame3FireCatch(item) {
+    playSfx("bs_fail");
+    game3FireCatchCount += 1;
+    if (game3FireCatchCount >= 2) {
+      playSfx("bs_sad");
+      playSfx("ng");
+    }
+
     item.el.remove();
 
     game3PlayScreen.classList.remove("is-fire-hit");
@@ -1206,6 +1387,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (game2Found) return;
     game2Found = true;
 
+    playSfx("gs_surprise");
+    playSfx("clear_sound1");
+
     const gsEl = document.getElementById("game2-hidden-gs");
     gsEl.src = "asset/image/game2_hidgs_3.png";
     game2Mission.classList.add("is-hidden"); // 상단 기본 미션 문구는 사라지고
@@ -1273,14 +1457,24 @@ document.addEventListener("DOMContentLoaded", () => {
   game2PlayScreen.addEventListener("click", (event) => {
     if (game2Found) return;
 
-    const gsObj = HIDDEN_OBJECTS.find((obj) => obj.type === "gs");
     const screenRect = game2PlayScreen.getBoundingClientRect();
     const radiusPx = screenRect.width * (SPOTLIGHT_RADIUS_PERCENT / 100);
-    const centerX = screenRect.left + (gsObj.left / 100) * screenRect.width;
-    const centerY = screenRect.top + (gsObj.top / 100) * screenRect.height;
-    const isOnGs = Math.hypot(event.clientX - centerX, event.clientY - centerY) <= radiusPx;
 
-    if (isOnGs) revealGeuseundae();
+    // 손전등 반경 안에 들어온 숨은 오브젝트(진짜 그슨대든 가짜 세모든)를 찾는다.
+    // 아무것도 비추지 않은 채 화면을 클릭한 경우는 "선택"으로 치지 않아 소리를 내지 않는다.
+    const hitObj = HIDDEN_OBJECTS.find((obj) => {
+      const centerX = screenRect.left + (obj.left / 100) * screenRect.width;
+      const centerY = screenRect.top + (obj.top / 100) * screenRect.height;
+      return Math.hypot(event.clientX - centerX, event.clientY - centerY) <= radiusPx;
+    });
+    if (!hitObj) return;
+
+    if (hitObj.type === "gs") {
+      revealGeuseundae();
+    } else {
+      playSfx("gs_fail");
+      playSfx("ng");
+    }
   });
 
   // ---------- 야광귀 실제 게임 화면 ('짚신' 자모 조합) ----------
@@ -1504,6 +1698,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const SPARKLE_TO_FLIGHT_DELAY = 80; // 파티클이 터지고 나서 자모가 날아가기 시작하기까지(ms)
 
   function handleCorrectJamo(piece) {
+    playSfx("yg_success");
+
     jipsinProgress += 1;
     const slot = jipsinProgress; // 방금 채운 wordbox 순번
     const order = Number(piece.dataset.order); // 조각 고유 색상 조회용
@@ -1519,6 +1715,7 @@ document.addEventListener("DOMContentLoaded", () => {
     flashCharacterFace("happy");
 
     if (jipsinProgress === JIPSIN_LENGTH) {
+      playSfx("clear_sound1");
       console.log("짚신 완성!");
       setTimeout(() => {
         goToScreen("yagwanggwi-clear");
@@ -1527,6 +1724,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleWrongJamo() {
+    playSfx("yg_fail");
+    playSfx("ng");
+
     game1PlayScreen.classList.remove("is-shaking");
     void game1PlayScreen.offsetWidth; // 리플로우시켜 연속 오답에도 흔들림 애니메이션이 매번 재생되게 함
     game1PlayScreen.classList.add("is-shaking");
@@ -1769,6 +1969,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function goToStory2() {
     changeScreen(yagwanggwiStory2Screen, { animate: true });
+    playSfx("yg_success"); // 짚신이 야광귀에게 전달되는 순간
     setTimeout(goToStory3, 1400 + STORY_HOLD_MS);
   }
 
@@ -1777,6 +1978,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // "채워진 채로 남아있는" 애니메이션 값이 클릭 후 뒤집기(.is-flipped) 클래스와
   // 충돌하지 않도록 정리한다. 야광귀/그슨대 카드 클리어 스토리가 공용으로 쓴다.
   function playClearCardEntrance(card, cardInner) {
+    playSfx("card_sound");
+
     card.classList.remove("is-settled", "is-flipped");
     card.getAnimations().forEach((anim) => anim.cancel());
     cardInner.getAnimations().forEach((anim) => anim.cancel());
@@ -1912,6 +2115,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 계속 갱신해 두되(나중에 뒤로가기/홈으로 맵에 들르는 경우를 대비),
   // 화면 전환 자체는 resetHistoryAndShow(mapScreen) 없이 바로 진행한다.
   game4StoryNextButton.addEventListener("click", () => {
+    playSfx("game_click");
     clearedStages.dokkaebi = true;
     console.log("게임 클리어! 모든 자모 획득 완료 -> 엔딩 카드 연출로 이동");
     goToEndingCards();
@@ -1938,10 +2142,12 @@ document.addEventListener("DOMContentLoaded", () => {
       // 폭죽 스타일 파티클(createEndingFirework)을 화면 중앙에 한 번 터뜨려
       // "훈민정음 28자모 완성!" 텍스트와 함께 등장하게 한다.
       createEndingFirework(endingCardsScreen, 50, 50, "#ffe08a");
+      playSfx("clear_sound2");
     }, ENDING_GLOW_DELAY_MS);
   }
 
   endingNextButton.addEventListener("click", () => {
+    playSfx("game_click");
     changeScreen(endingGreetingScreen, { animate: true });
   });
 
@@ -1951,6 +2157,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const endingGreetingNextButton = document.getElementById("ending-greeting-next-button");
 
   endingGreetingNextButton.addEventListener("click", () => {
+    playSfx("game_click");
     changeScreen(webcamScreen, { animate: true });
     startWebcamStream();
   });
@@ -2129,6 +2336,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    playSfx("camera");
+
     // canvas 합성 단계(drawImage/toDataURL)는 브라우저·실행 환경에 따라
     // 보안 제약(예: file://로 직접 열었을 때의 캔버스 오염 등)으로 예외를
     // 던질 수 있다. try/catch 없이 두면 예외가 콘솔에만 조용히 찍히고
@@ -2190,11 +2399,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   photoAgainButton.addEventListener("click", () => {
+    playSfx("game_click");
     changeScreen(webcamScreen, { animate: true });
     startWebcamStream();
   });
 
   photoStoreButton.addEventListener("click", () => {
+    playSfx("game_click");
     uploadPhotoAndShowQr();
   });
 
