@@ -34,6 +34,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const game3CountValue = document.getElementById("game3-count-value");
   const startButton = document.getElementById("start-button");
   const charCards = document.querySelectorAll(".char-card");
+  const introVideoScreen = document.getElementById("intro-video-screen");
+  const introVideo = document.getElementById("intro-video");
+  const introVideoLoading = document.getElementById("intro-video-loading");
+  const introVideoSkipButton = document.getElementById("intro-video-skip-button");
 
   let selectedCharacter = null;
 
@@ -52,6 +56,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // 그 선언이 끝난 뒤에 일어나므로 문제없다).
     if (current === game1PlayScreen && screen !== game1PlayScreen) {
       stopGame1HandTracking();
+    }
+    // 인트로 영상 화면을 벗어날 때(스킵/재생 종료 모두 goToCharacterScreenFromIntro를
+    // 거쳐 이미 정지시키지만) 혹시 모를 다른 경로로 벗어나는 경우까지 대비해 여기서도 한 번 더 막는다.
+    if (current === introVideoScreen && screen !== introVideoScreen) {
+      stopIntroVideo();
     }
 
     screens.forEach((s) => {
@@ -188,6 +197,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // 인트로 영상 자체에 음성/음악이 들어있어 game_bgm과 겹쳐 들리지 않도록,
+  // 영상이 재생되는 동안만 현재 BGM 트랙(currentBgmKey)은 그대로 둔 채
+  // 오디오만 일시정지했다가 영상이 끝나면 이어서 재생한다.
+  function pauseBgmForVideo() {
+    if (currentBgmAudio) currentBgmAudio.pause();
+  }
+
+  function resumeBgmAfterVideo() {
+    if (currentBgmAudio && masterSoundOn) {
+      currentBgmAudio.play().catch(() => {});
+    }
+  }
+
   // 자동재생 정책 때문에 페이지 로드 직후 BGM 재생이 막혔을 수 있으므로,
   // 사용자의 첫 클릭/터치에서 한 번만 재생을 다시 시도한다.
   function unlockAudioOnUserGesture() {
@@ -290,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 시작화면·캐릭터 선택 화면을 제외한 모든 화면에 공통 버튼 3개를 주입한다.
-  const COMMON_UI_EXCLUDED_SCREENS = [startScreen, characterScreen];
+  const COMMON_UI_EXCLUDED_SCREENS = [startScreen, characterScreen, introVideoScreen];
   screens.forEach((screen) => {
     if (COMMON_UI_EXCLUDED_SCREENS.includes(screen)) return;
     screen.appendChild(createCommonUiButtons());
@@ -324,8 +346,95 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("게임 시작");
     charCards.forEach((c) => c.classList.remove("is-selected"));
     selectedCharacter = null;
-    showScreen(characterScreen);
+    startIntroVideoFlow();
   });
+
+  // ---------- 시작화면 -> 캐릭터 선택 화면 사이 인트로 영상 ----------
+  // 40MB 안팎의 영상이라 페이지 로드 시점엔 전혀 내려받지 않고(<video preload="none">,
+  // src 속성 없음), "게임 시작" 버튼을 눌러 이 화면에 처음 들어올 때만 src를
+  // 지연 설정해 로딩을 시작한다. 이후 다시 볼 때는(스킵 후 재도전 등) 이미
+  // 받아둔 데이터를 그대로 재사용해 currentTime만 0으로 되돌린다.
+  const INTRO_VIDEO_SRC = "asset/video/intro_video.mp4";
+  const INTRO_VIDEO_SKIP_DELAY_MS = 5000; // 재생이 실제로 시작된 뒤 스킵 버튼이 나타나기까지의 시간
+  const INTRO_VIDEO_READY_STATE = 3; // HAVE_FUTURE_DATA 이상이면 끊김 없이 재생을 이어갈 수 있다고 간주
+
+  let introVideoSrcLoaded = false;
+  let introVideoSkipTimer = null;
+
+  function resetIntroVideoUi() {
+    introVideo.classList.remove("is-ready");
+    introVideoLoading.hidden = false;
+    introVideoSkipButton.hidden = true;
+    clearTimeout(introVideoSkipTimer);
+    introVideoSkipTimer = null;
+  }
+
+  function handleIntroVideoCanPlay() {
+    introVideo.classList.add("is-ready");
+    introVideoLoading.hidden = true;
+  }
+
+  // 버퍼링으로 인한 일시정지 후 재생 재개 시에도 'playing'이 다시 발생할 수 있어,
+  // 이번 재생에서 이미 타이머를 걸어뒀다면 다시 걸지 않는다(resetIntroVideoUi가
+  // 매 진입마다 타이머를 초기화하므로 새로 볼 때는 정상적으로 다시 걸린다).
+  function handleIntroVideoPlaying() {
+    if (introVideoSkipTimer) return;
+    introVideoSkipTimer = setTimeout(() => {
+      introVideoSkipButton.hidden = false;
+    }, INTRO_VIDEO_SKIP_DELAY_MS);
+  }
+
+  function handleIntroVideoEnded() {
+    console.log("인트로 영상 재생 완료 - 캐릭터 선택 화면으로 이동");
+    goToCharacterScreenFromIntro();
+  }
+
+  function stopIntroVideo() {
+    introVideo.pause();
+    resetIntroVideoUi();
+  }
+
+  function goToCharacterScreenFromIntro() {
+    stopIntroVideo();
+    resumeBgmAfterVideo();
+    showScreen(characterScreen);
+  }
+
+  introVideo.addEventListener("canplay", handleIntroVideoCanPlay);
+  introVideo.addEventListener("playing", handleIntroVideoPlaying);
+  introVideo.addEventListener("ended", handleIntroVideoEnded);
+
+  introVideoSkipButton.addEventListener("click", () => {
+    playSfx("game_click");
+    console.log("인트로 영상 건너뛰기");
+    goToCharacterScreenFromIntro();
+  });
+
+  function startIntroVideoFlow() {
+    showScreen(introVideoScreen);
+    resetIntroVideoUi();
+    pauseBgmForVideo();
+
+    introVideo.muted = !masterSoundOn;
+    if (!introVideoSrcLoaded) {
+      introVideoSrcLoaded = true;
+      introVideo.src = INTRO_VIDEO_SRC;
+    }
+    introVideo.currentTime = 0;
+
+    // 이전에 이미 끝까지(또는 충분히) 받아둔 상태라면 로딩 스피너 없이 바로 보여준다.
+    if (introVideo.readyState >= INTRO_VIDEO_READY_STATE) {
+      handleIntroVideoCanPlay();
+    }
+
+    introVideo.play().catch((error) => {
+      // 자동재생이 막히는 등 재생 자체가 실패하면 로딩 화면에 무한히 머무르지
+      // 않도록 스킵 버튼을 바로 노출해 사용자가 직접 다음으로 넘어갈 수 있게 한다.
+      console.log("[인트로 영상] 재생 실패, 스킵 버튼을 바로 노출:", error);
+      introVideoLoading.hidden = true;
+      introVideoSkipButton.hidden = false;
+    });
+  }
 
   // ---------- 2단계: 캐릭터 선택 -> 3단계(요괴맵) ----------
   charCards.forEach((card) => {

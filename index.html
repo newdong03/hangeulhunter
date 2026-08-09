@@ -60,12 +60,24 @@
   </button>
 </div>
 
+<div class="screen" id="intro-video-screen" hidden>
+  <video class="intro-video" id="intro-video" playsinline preload="none"></video>
+
+  <div class="intro-video-loading" id="intro-video-loading">
+    <div class="qr-spinner"></div>
+  </div>
+
+  <button class="video-skip-button" id="intro-video-skip-button" type="button" hidden>
+    <img src="asset/image/button_skip.png" alt="건너뛰기">
+  </button>
+</div>
+
 <div class="screen" id="character-screen" hidden>
   <img class="bg" src="asset/image/Background_step1_back.png" alt="배경">
 
   <img class="start-cloud-drift" src="asset/image/Background_step1_cloud.png" alt="">
 
-  <img class="logo-typo logo-typo--small" src="asset/image/logo_typo.png" alt="한글사냥꾼">
+  <img class="char-select-title" src="asset/image/friend_select.png" alt="사냥꾼을 선택해주세요">
 
   <div class="char-card" id="char-boy" data-character="boy">
     <img class="char-card__img" src="asset/image/cr_boy_box.png" alt="남자 사냥꾼">

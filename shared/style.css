@@ -518,11 +518,84 @@ html, body {
   width: 6.4%;
 }
 
+/* ---------- 시작화면 -> 캐릭터 선택 화면 사이 인트로 영상 ---------- */
+
+.intro-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.intro-video.is-ready {
+  opacity: 1;
+}
+
+.intro-video-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.intro-video-loading[hidden] {
+  display: none;
+}
+
+/* 도전 시작(.rule-challenge-button)과 같은 우측 정렬 하단 액션 버튼
+   기준(--layout-cta-bottom/right/width)을 그대로 재사용한다. */
+.video-skip-button {
+  position: absolute;
+  bottom: var(--layout-cta-bottom);
+  right: var(--layout-cta-right);
+  width: var(--layout-cta-width);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 10;
+}
+
+.video-skip-button[hidden] {
+  display: none;
+}
+
+.video-skip-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.video-skip-button:hover {
+  transform: scale(1.06);
+}
+
+.video-skip-button:active {
+  transform: scale(0.94);
+}
+
 /* ---------- 캐릭터 선택 화면 ---------- */
 
-.logo-typo--small {
+/* friend_select.png는 가로로 긴 문구 배너라 종횡비가 다른 게임들의
+   .rule-mission/.intro-mission(미션 설명 문구)과 크게 다르다. 그래서
+   width%를 그대로 재사용하는 대신, 텍스트가 화면에 렌더링되는 실제 높이가
+   그 문구들과 비슷해지도록(대략 화면 너비의 6% 안팎) 이미지 실측 비율에
+   맞춰 너비를 역산했다. */
+.char-select-title {
+  position: absolute;
   top: 17%;
-  width: 12%;
+  left: 50%;
+  width: 48%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 10;
 }
 
 .char-card {
@@ -2818,9 +2891,6 @@ html, body {
   .logo-typo {
     width: 32.4%;
   }
-  .logo-typo--small {
-    width: 20%;
-  }
   .start-button {
     width: 21%;
   }
@@ -2850,9 +2920,6 @@ html, body {
 @media (max-width: 480px) {
   .logo-typo {
     width: 38.4%;
-  }
-  .logo-typo--small {
-    width: 26%;
   }
   .start-button {
     width: 26%;
