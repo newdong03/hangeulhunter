@@ -2596,6 +2596,15 @@ html, body {
   object-fit: contain;
 }
 
+/* ms_gs_basic.png는 원본 비율(≈1:1)이 다른 세 캐릭터보다 훨씬 정사각형에
+   가까워서, 고정 박스(.ending-monster, aspect-ratio 4/5)에 object-fit:contain
+   으로 넣으면 세로 폭 기준으로만 꽉 차고(가로 100%/세로 약 80%) 나머지
+   세 캐릭터(세로 90~100%)보다 눈에 띄게 작아 보인다. 다른 캐릭터들과
+   면적이 비슷해지도록 그슨대 이미지만 살짝 확대해 보정한다. */
+.ending-monster--2 .ending-monster-img {
+  transform: scale(1.09);
+}
+
 /* 다음 버튼은 마지막 요괴(딜레이 1.1s + 재생 0.55s = 1.65s)가 다 올라온 직후 나타난다. */
 #ending-greeting-screen.is-playing .story3-next-button {
   animation: rule-fade-in 0.4s ease-out 1.9s forwards;
