@@ -1794,6 +1794,34 @@ html, body {
   animation: game1-shake 0.35s ease-in-out;
 }
 
+/* 화면이 붉게 물들었다가 돌아오는 연출도 불가살이 게임(is-fire-hit,
+   game3-fire-flash 키프레임)을 그대로 재사용한다. */
+#game1-play-screen.is-fire-hit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(220, 40, 30, 0.4);
+  z-index: 12;
+  pointer-events: none;
+  animation: game3-fire-flash 0.5s ease-out forwards;
+}
+
+/* 오답(가짜 세모 클릭) 연출도 불가살이/야광귀 게임과 동일한
+   game1-shake + game3-fire-flash 키프레임을 그대로 재사용한다. */
+#game2-play-screen.is-shaking {
+  animation: game1-shake 0.35s ease-in-out;
+}
+
+#game2-play-screen.is-fire-hit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(220, 40, 30, 0.4);
+  z-index: 12;
+  pointer-events: none;
+  animation: game3-fire-flash 0.5s ease-out forwards;
+}
+
 @keyframes jamo-float {
   0%, 100% { transform: translate(-50%, -50%) translateY(0); }
   50% { transform: translate(-50%, -50%) translateY(-1.2vh); }
@@ -2596,8 +2624,10 @@ html, body {
   height: 100%;
   object-fit: cover;
   display: block;
-  /* 카메라 화면 특성상 좌우 반전 없이 있는 그대로 보여준다(캡처 결과와
-     미리보기를 동일하게 유지하기 위해 미러링을 걸지 않는다). */
+  /* 거울처럼 본인 시점과 동일하게 보이도록 좌우 반전한다. 캡처 결과도
+     동일하게 보이도록 main.js의 capturePhoto()에서 캔버스에 그릴 때도
+     같이 좌우 반전시켜 미리보기와 어긋나지 않게 맞춰 뒀다. */
+  transform: scaleX(-1);
 }
 
 .webcam-frame {

@@ -1063,6 +1063,10 @@ document.addEventListener("DOMContentLoaded", () => {
     game4QuizIndex = 0;
     game4QuizAButton.classList.remove("is-correct");
     game4QuizBButton.classList.remove("is-correct");
+    // 이전 플레이에서 오답으로 붙은 is-shaking/is-fire-hit이 남아있으면,
+    // 화면이 hidden -> visible로 바뀌는 순간 CSS 애니메이션이 처음부터
+    // 다시 재생되어(도전하기만 눌렀을 뿐인데) 붉은 화면 플래시가 오작동한다.
+    game4PlayScreen.classList.remove("is-shaking", "is-fire-hit");
     loadGame4Quiz(game4QuizIndex);
   }
 
@@ -1483,6 +1487,7 @@ document.addEventListener("DOMContentLoaded", () => {
     game2Found = false;
     game2Mission.classList.remove("is-hidden");
     game2MissionFind.classList.remove("is-visible");
+    game2PlayScreen.classList.remove("is-shaking", "is-fire-hit");
     game2PlayScreen.style.setProperty("--x", "50%");
     game2PlayScreen.style.setProperty("--y", "50%");
     game2PlayScreen.style.setProperty("--radius", "0px");
@@ -1583,6 +1588,16 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       playSfx("gs_fail");
       playSfx("ng");
+
+      // 가짜 세모를 눌렀을 때도 불가살이 게임과 동일한 화면 흔들림 +
+      // 붉은 화면 플래시(is-shaking/is-fire-hit)를 재사용해 통일감을 준다.
+      game2PlayScreen.classList.remove("is-shaking");
+      void game2PlayScreen.offsetWidth;
+      game2PlayScreen.classList.add("is-shaking");
+
+      game2PlayScreen.classList.remove("is-fire-hit");
+      void game2PlayScreen.offsetWidth;
+      game2PlayScreen.classList.add("is-fire-hit");
     }
   });
 
@@ -1617,7 +1632,7 @@ document.addEventListener("DOMContentLoaded", () => {
     jipsinProgress = 0;
     clearTimeout(faceResetTimer);
     setCharacterFace("basic");
-    game1PlayScreen.classList.remove("is-shaking");
+    game1PlayScreen.classList.remove("is-shaking", "is-fire-hit");
 
     jamoPieces.forEach((piece) => {
       piece.classList.remove("is-used");
@@ -1832,6 +1847,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // 화면 흔들림에 더해, 불가살이 게임(is-fire-hit)과 동일한 붉은 화면
+  // 플래시도 함께 재사용해 오답 연출의 강도/색상/지속시간을 통일한다.
   function handleWrongJamo() {
     playSfx("yg_fail");
     playSfx("ng");
@@ -1839,6 +1856,10 @@ document.addEventListener("DOMContentLoaded", () => {
     game1PlayScreen.classList.remove("is-shaking");
     void game1PlayScreen.offsetWidth; // 리플로우시켜 연속 오답에도 흔들림 애니메이션이 매번 재생되게 함
     game1PlayScreen.classList.add("is-shaking");
+
+    game1PlayScreen.classList.remove("is-fire-hit");
+    void game1PlayScreen.offsetWidth;
+    game1PlayScreen.classList.add("is-fire-hit");
 
     flashCharacterFace("sad");
   }
@@ -2466,7 +2487,13 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       // 1) 웹캠 프레임을 구멍 자리에 맞춰 그리고, 2) 그 위에 final_frame.png를
       // 통째로 덮어써 프레임이 캡처 이미지에 포함되도록 합성한다.
-      ctx.drawImage(webcamVideo, sx, sy, sw, sh, WEBCAM_HOLE_PX.x, WEBCAM_HOLE_PX.y, WEBCAM_HOLE_PX.width, WEBCAM_HOLE_PX.height);
+      // CSS 미리보기(.webcam-video)를 거울처럼 좌우 반전해 보여주므로,
+      // 캡처 결과도 미리보기와 어긋나지 않도록 구멍 영역만 좌우 반전해서 그린다.
+      ctx.save();
+      ctx.translate(WEBCAM_HOLE_PX.x + WEBCAM_HOLE_PX.width, WEBCAM_HOLE_PX.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(webcamVideo, sx, sy, sw, sh, 0, 0, WEBCAM_HOLE_PX.width, WEBCAM_HOLE_PX.height);
+      ctx.restore();
       // crossOrigin으로 다시 로드해둔 프레임 사본이 있으면 그것을 쓰고,
       // 아직 준비되지 않았다면(로드가 늦었거나 실패) 화면에 이미 떠 있는
       // 기본 프레임 이미지로 대체한다.
