@@ -340,6 +340,94 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ---------- 언어 전환 (한국어 <-> English) ----------
+  // 화면/로직/레이아웃은 언어와 무관하게 완전히 동일하게 유지하고, 텍스트가
+  // 들어간 <img>들의 src만 "_eng"가 붙은 영어 버전으로 바꿔치기한다.
+  // - currentLang은 전체 게임이 공유하는 전역 상태(하나의 페이지 안에 모든
+  //   화면이 이미 같이 들어있으므로 화면 전환과 무관하게 자연히 공유된다)이고,
+  //   localStorage에도 저장해 새로고침해도 유지되게 한다.
+  // - 각 이미지가 최초 가진 src를 "한국어 원본"으로 한 번만 기억해두고
+  //   (data-lang-ko-src), 영어로 전환할 때만 "_eng" 버전이 실제로 로드되는지
+  //   확인한다. 로드에 성공한 이미지만 캐시해두고 이후에는 바로 교체하며,
+  //   실패(아직 영어 버전이 없는 이미지)한 경우는 조용히 원본을 그대로 둔다
+  //   (한 번 확인한 결과는 data-lang-eng-available에 캐시해 재확인하지 않는다).
+  const LANG_STORAGE_KEY = "hangulHunter.lang";
+  let currentLang = localStorage.getItem(LANG_STORAGE_KEY) === "en" ? "en" : "ko";
+  const langToggleButton = document.getElementById("lang-toggle-button");
+
+  function getEngImageSrc(koSrc) {
+    const match = koSrc.match(/^(.*)(\.[a-zA-Z0-9]+)$/);
+    return match ? `${match[1]}_eng${match[2]}` : null;
+  }
+
+  function applyLangToImage(img) {
+    if (!img.dataset.langKoSrc) {
+      const original = img.getAttribute("src");
+      if (!original) return;
+      img.dataset.langKoSrc = original;
+    }
+    const koSrc = img.dataset.langKoSrc;
+
+    if (currentLang === "ko" || img.dataset.langEngAvailable === "0") {
+      if (img.getAttribute("src") !== koSrc) img.src = koSrc;
+      return;
+    }
+
+    const engSrc = getEngImageSrc(koSrc);
+    if (!engSrc) {
+      img.dataset.langEngAvailable = "0";
+      return;
+    }
+
+    if (img.dataset.langEngAvailable === "1") {
+      img.src = engSrc;
+      return;
+    }
+
+    // 아직 확인 전인 이미지 - 실제로 로드되는지 먼저 검증한 뒤에만 교체한다.
+    const probe = new Image();
+    probe.onload = () => {
+      img.dataset.langEngAvailable = "1";
+      if (currentLang === "en") img.src = engSrc;
+    };
+    probe.onerror = () => {
+      img.dataset.langEngAvailable = "0";
+      if (img.getAttribute("src") !== koSrc) img.src = koSrc; // 안전하게 한국어 원본 유지
+    };
+    probe.src = engSrc;
+  }
+
+  function applyLanguageToAllImages() {
+    document.querySelectorAll("img").forEach(applyLangToImage);
+  }
+
+  // 게임 로직이 <img>의 src를 직접 갈아끼우는 곳(예: 도깨비 퀴즈 문제
+  // 전환)은 applyLanguageToAllImages의 정적 스캔 이후에 일어나므로, 그
+  // 지점에서만 이 함수로 감싸 언어를 반영한다. 이전에 캐시해둔 한국어
+  // 원본/영어 존재 여부는 이번 src와 무관하므로 초기화하고 다시 판정한다.
+  function setLangAwareSrc(img, koSrc) {
+    img.dataset.langKoSrc = koSrc;
+    delete img.dataset.langEngAvailable;
+    applyLangToImage(img);
+  }
+
+  // <html lang="..">도 currentLang에 맞춰 반영해둔다 — style.css의
+  // html[lang="en"] 선택자가 이 값을 보고, 한글판보다 캔버스가 넓게
+  // 제작된 일부 _eng 문구 이미지(introduce_ment_eng 등)의 너비를
+  // 화면별로 보정한다(실측 비율 역산값, 각 규칙 옆 주석 참고).
+  document.documentElement.lang = currentLang;
+  applyLanguageToAllImages();
+  langToggleButton.classList.toggle("is-en", currentLang === "en");
+
+  langToggleButton.addEventListener("click", () => {
+    playSfx("game_click");
+    currentLang = currentLang === "ko" ? "en" : "ko";
+    localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+    document.documentElement.lang = currentLang;
+    langToggleButton.classList.toggle("is-en", currentLang === "en");
+    applyLanguageToAllImages();
+  });
+
   // ---------- 1단계 -> 2단계 ----------
   startButton.addEventListener("click", () => {
     playSfx("game_click_2");
@@ -1051,7 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadGame4Quiz(index) {
     const quiz = GAME4_QUIZZES[index];
     game4QuizCharacter.src = `asset/image/${quiz.character}.png`;
-    game4QuizTalk.src = `asset/image/${quiz.talk}.png`;
+    setLangAwareSrc(game4QuizTalk, `asset/image/${quiz.talk}.png`);
     game4QuizTalk.alt = quiz.talkAlt;
     game4QuizAImg.src = `asset/image/${quiz.optionAImg}.png`;
     game4QuizAImg.alt = quiz.optionAAlt;
@@ -1442,14 +1530,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- 그슨대 실제 게임 화면 (숨은그림찾기 + 손전등) ----------
 
   // 목업(5.game2.png) 실측 좌표(화면 대비 %) 기준 배치. gs 하나만 진짜
-  // 그슨대이고 나머지(item1~3)는 손전등을 비춰도 밝아지기만 하는 가짜 세모다.
+  // 그슨대이고 나머지(item1~5)는 손전등을 비춰도 밝아지기만 하는 가짜 세모다.
+  // item1~5가 화면 안에서 서로 다른 자리에 하나씩만 나오도록 각 슬롯에
+  // 다른 type을 준다(예전에는 item1/item2가 두 자리씩 중복 배치돼 있었다).
   const HIDDEN_OBJECTS = [
     { id: "deco-1", type: "item1", top: 69.9, left: 7.8, width: 9.2 },
     { id: "deco-2", type: "item2", top: 78.7, left: 23.2, width: 9.8 },
     { id: "deco-3", type: "item3", top: 70.8, left: 38.5, width: 9.2 },
-    { id: "deco-4", type: "item2", top: 87.9, left: 54.2, width: 9.8 },
+    { id: "deco-4", type: "item4", top: 87.9, left: 54.2, width: 9.8 },
     { id: "gs", type: "gs", top: 72.2, left: 71.4, width: 10.2 },
-    { id: "deco-5", type: "item1", top: 70.8, left: 88.5, width: 9.2 },
+    { id: "deco-5", type: "item5", top: 70.8, left: 88.5, width: 9.2 },
   ];
 
   const SPOTLIGHT_RADIUS_PERCENT = 11; // 손전등 반경 (화면 너비 대비 %)
@@ -1458,11 +1548,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let game2Found = false; // 그슨대를 이미 찾았는지 (중복 트리거 방지)
 
-  // 가짜 세모(item1~3)의 실제 파일명은 game2_hiditem1.png / _on.png 형태라
+  // 가짜 세모(item1~5)의 실제 파일명은 game2_hiditem1.png / _on.png 형태라
   // obj.type("item1")과 파일명 사이에 "hid" 접두어가 하나 더 붙는다.
+  // item1~3은 꺼짐 상태에 접미사가 없지만(game2_hiditem1.png), item4~5는
+  // 꺼짐 상태 파일명에도 "_off"가 붙어 있어(game2_hiditem4_off.png) 따로 처리한다.
   function getHiddenObjectSrc(type, isLit) {
     if (type === "gs") return "asset/image/game2_hidgs_1.png";
-    return `asset/image/game2_hid${type}${isLit ? "_on" : ""}.png`;
+    if (isLit) return `asset/image/game2_hid${type}_on.png`;
+    const offNeedsSuffix = type === "item4" || type === "item5";
+    return `asset/image/game2_hid${type}${offNeedsSuffix ? "_off" : ""}.png`;
   }
 
   function buildGame2HiddenObjects() {

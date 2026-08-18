@@ -399,6 +399,62 @@ html, body {
   transform: translate(50%, -50%) scale(0.94);
 }
 
+/* ---------- 언어 전환(한국어 <-> English) ----------
+   흰색 원형 배경 안에 국기 아이콘(한글 모드=태극기, 영어 모드=성조기)이
+   들어가는 작은 버튼. 화면 좌측으로 옮기면서, 뒤로가기 버튼(.back-button)
+   등 공통 코너 버튼들이 쓰는 실제 좌측 가장자리 기준(4.95% — 위쪽
+   :root 주석의 --layout-back-left/--layout-cta-right 설명 참고)에 맞춘다.
+   뒤로가기는 translate(-50%,-50%) + 자기 너비 5.2%이므로 center=4.95+2.6=7.55%
+   (--layout-back-left)인 것과 같은 방식으로, 이 버튼은 너비가 3.4%라
+   center = 4.95 + 3.4/2 = 6.65%로 잡아야 실제 좌측 가장자리가 동일한
+   4.95%에 맞는다. 세로 위치는 logo_symbol(.start-version-toggle)과 같은
+   top:7.7%를 그대로 유지한다. */
+.lang-toggle-button {
+  position: absolute;
+  top: 7.7%;
+  left: 6.65%;
+  width: 3.4%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.35);
+  z-index: 20;
+}
+
+.lang-flag-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+}
+
+/* 두 국기 아이콘을 항상 같이 그려두고, is-en 클래스 유무로 하나만 보여준다
+   (main.js가 클릭/초기 로드 시 currentLang에 맞춰 이 클래스를 뒤집는다). */
+.lang-toggle-button .lang-flag-icon--us {
+  display: none;
+}
+
+.lang-toggle-button.is-en .lang-flag-icon--kr {
+  display: none;
+}
+
+.lang-toggle-button.is-en .lang-flag-icon--us {
+  display: block;
+}
+
+.lang-toggle-button:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.lang-toggle-button:active {
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
 /* 버전1 전용(요괴 4마리 + 짝을 이루는 장식 구름)은 기본으로 보이고,
    버전2 전용(하단 캐릭터 합성 이미지)은 기본으로 숨긴다. cloud1(디버그
    트리거)은 두 버전 어디에도 속하지 않는 공통 요소라 이 토글의 영향을
@@ -596,6 +652,14 @@ html, body {
   height: auto;
   transform: translate(-50%, -50%);
   z-index: 10;
+}
+
+/* friend_select_eng.png(995x83)도 한글판(659x82)보다 캔버스가 훨씬 넓어
+   같은 이유로 작아 보인다 — 실측 비율 역산(48% × (82×995)/(83×659) ≈ 71.6%).
+   중앙 정렬이라 폭이 커져도(14.2%~85.8%) 화면 밖으로 나가지 않고, 카드
+   (.char-card, top:59.5%)와도 세로로 충분히 떨어져 있어 겹치지 않는다. */
+html[lang="en"] .char-select-title {
+  width: 71.6%;
 }
 
 .char-card {
@@ -823,6 +887,15 @@ html, body {
   opacity: 0;
 }
 
+/* introduce_ment_eng.png는 한글 원본(482x75)보다 캔버스가 훨씬 넓은
+   비율로 제작돼(853x73) width:30%를 그대로 쓰면 height:auto 특성상
+   실제 렌더링 높이가 원본의 절반 수준(0.0856/0.1556 ≈ 55%)으로 작아
+   보인다. 렌더링 높이가 한글판과 같아지도록 실측 비율로 너비를
+   역산했다(30% × (75×853)/(73×482) ≈ 54.5%). */
+html[lang="en"] .intro-mission {
+  width: 54.5%;
+}
+
 /* 문구 아래, 화면 하단 쪽에 자리잡되 위로 슥 올라오며 페이드인되는
    연출 — rule-talk-in(말풍선용, 28px)보다 이동 거리를 크게 잡아
    "아래에서 올라오는" 느낌을 확실히 낸다. translate(-50%,-50%)로 중앙
@@ -924,6 +997,14 @@ html, body {
   transform: translateX(-50%);
   z-index: 5;
   opacity: 0;
+}
+
+/* mission_game1_eng.png(1147x142)도 한글판(697x141)보다 캔버스가 훨씬
+   넓어 width%를 그대로 쓰면 작아 보인다 — 같은 방식(실측 비율 역산,
+   30% × (141×1147)/(142×697) ≈ 49%)으로 game2~4 룰 화면도 각자의
+   #gameN-rule-screen 스코프 안에서 이 값을 덮어쓴다. */
+html[lang="en"] .rule-mission {
+  width: 49%;
 }
 
 /* 말풍선(.yg-rule-talk)이 캐릭터와 함께 idle 모션을 타도록 .rule-talk를
@@ -1065,6 +1146,12 @@ html, body {
   width: 32.9%;
 }
 
+/* mission_game2_eng.png(1187x141) 역시 같은 문제 — 실측 비율 역산
+   (32.9% × (140×1187)/(141×756) ≈ 51.3%). */
+html[lang="en"] #game2-rule-screen .rule-mission {
+  width: 51.3%;
+}
+
 #game2-rule-screen.is-playing .rule-mission {
   animation: rule-fade-in 0.7s ease-out 0.25s forwards;
 }
@@ -1084,6 +1171,12 @@ html, body {
    보인다. 실측 비율에 맞춰 이 화면에서만 줄인다. */
 #game3-rule-screen .rule-mission {
   width: 28.6%;
+}
+
+/* mission_game3_eng.png(1125x139) 역시 같은 문제 — 실측 비율 역산
+   (28.6% × (140×1125)/(139×668) ≈ 48.5%). */
+html[lang="en"] #game3-rule-screen .rule-mission {
+  width: 48.5%;
 }
 
 .bs-rule-char-wrap {
@@ -1165,6 +1258,12 @@ html, body {
    크게 보인다. 이 화면에서만 스코프해서 줄인다. */
 #game4-rule-screen .rule-mission {
   width: 28.4%;
+}
+
+/* mission_game4_story_eng.png(1000x139) 역시 같은 문제 — 실측 비율 역산
+   (28.4% × (142×1000)/(139×658) ≈ 44.1%). */
+html[lang="en"] #game4-rule-screen .rule-mission {
+  width: 44.1%;
 }
 
 #game4-rule-screen.is-playing .rule-mission {
@@ -1580,6 +1679,12 @@ html, body {
   transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
+/* mission_game2_find_eng.png(262x74)도 한글판(198x91)보다 캔버스가 넓어
+   같은 이유로 작아 보인다 — 실측 비율 역산(10% × (91×262)/(74×198) ≈ 16.3%). */
+html[lang="en"] .game2-mission-find {
+  width: 16.3%;
+}
+
 .game2-mission-find.is-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
@@ -1978,6 +2083,12 @@ html, body {
   z-index: 6;
 }
 
+/* ygstory_talk1_eng.png(578x92)도 한글판(285x89)보다 캔버스가 훨씬 넓어
+   같은 이유로 작아 보인다 — 실측 비율 역산(15% × (89×578)/(92×285) ≈ 29.4%). */
+html[lang="en"] .story-talk1 {
+  width: 29.4%;
+}
+
 #yagwanggwi-story1-screen.is-playing .story-talk1 {
   animation: story-talk-in 0.4s ease-out 0.9s forwards;
 }
@@ -2127,6 +2238,15 @@ html, body {
   transform: translateX(-50%);
   opacity: 0;
   z-index: 5;
+}
+
+/* 이 클래스는 4개 클리어 스토리 화면(ygstory_talk2/gsstory_talk2/
+   bsstory_talk/dkstory_talk2)이 공유한다 — 한글판들의 세로/가로 비율이
+   서로 비슷해(0.25~0.27) 하나의 width로 다 같이 커버되듯, _eng 버전들도
+   서로 비슷한 비율(0.165~0.175)이라 실측 평균으로 하나의 값(약 38.5%)
+   이면 네 화면 모두 무리 없이 맞는다. */
+html[lang="en"] .story3-title {
+  width: 38.5%;
 }
 
 #yagwanggwi-story3-screen.is-playing .story3-title {
@@ -2481,6 +2601,12 @@ html, body {
   z-index: 6;
 }
 
+/* ending_talk_image_1_eng.png(581x73)도 한글판(436x83)보다 캔버스가 넓어
+   같은 이유로 작아 보인다 — 실측 비율 역산(24% × (83×581)/(73×436) ≈ 36.4%). */
+html[lang="en"] .ending-complete-text {
+  width: 36.4%;
+}
+
 #ending-cards-screen.is-playing .ending-complete-text {
   animation: rule-fade-in 0.6s ease-out 3s forwards;
 }
@@ -2508,6 +2634,12 @@ html, body {
   transform: translateX(-50%);
   opacity: 0;
   z-index: 5;
+}
+
+/* ending_talk_image_eng.png(757x75)도 한글판(600x74)보다 캔버스가 넓어
+   같은 이유로 작아 보인다 — 실측 비율 역산(34% × (74×757)/(75×600) ≈ 42.3%). */
+html[lang="en"] .ending-greeting-title {
+  width: 42.3%;
 }
 
 #ending-greeting-screen.is-playing .ending-greeting-title {
@@ -2914,6 +3046,14 @@ html, body {
   width: 100%;
   height: auto;
   display: block;
+}
+
+/* button_fin_eng.png(374x105)는 한글판(333x105)보다 폭이 넓어(높이는 동일)
+   같은 --layout-cta-width(12.45%)를 그대로 쓰면 텍스트가 약간 작아 보인다
+   — 실측 비율 역산(12.45% × 374/333 ≈ 14%). 다른 하단 액션 버튼들은
+   ko/en 이미지 크기가 동일해 영향 없다. */
+html[lang="en"] .qr-home-button {
+  width: 14%;
 }
 
 .qr-home-button:hover {
