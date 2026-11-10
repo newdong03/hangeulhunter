@@ -426,6 +426,35 @@ html, body {
   z-index: 20;
 }
 
+/* 시작화면 사운드 버튼: 국기 버튼 바로 오른쪽, 같은 크기·같은 세로 위치 */
+.start-sound-button {
+  position: absolute;
+  top: 7.7%;
+  left: 12.05%;
+  width: 3.4%;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 20;
+}
+
+.start-sound-button img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.start-sound-button:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.start-sound-button:active {
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
 .lang-flag-icon {
   width: 100%;
   height: 100%;

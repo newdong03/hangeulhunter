@@ -90,7 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 한 번만 만들어서 각 화면에 주입한다.
 
   let screenHistory = []; // 실제로 밟아온 화면 순서 스택. 뒤로가기는 여기서 pop한다.
-  let soundOn = true; // 사운드 on/off 상태. button_sound_on/off 토글 버튼과 사운드 시스템(setSoundMuted)이 함께 참조한다.
+  // 사운드 on/off 상태. button_sound_on/off 토글 버튼과 사운드 시스템(setSoundMuted)이 함께 참조한다.
+  // 포트폴리오 사이트처럼 다른 페이지가 이 게임을 ?muted=1 로 열면 음소거 상태로 시작한다(그 외에는 기존대로 소리 켜짐).
+  let soundOn = new URLSearchParams(location.search).get("muted") !== "1";
 
   // ---------- 사운드 시스템 (BGM + 효과음) ----------
   // sound/ 폴더의 실제 파일과 1:1로 매핑한다. BGM(game_bgm, game_bgm2)은 화면을
@@ -129,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const BGM_CROSSFADE_MS = 500; // 이전 BGM이 사라지고 새 BGM이 차오르는 시간
 
-  let masterSoundOn = true; // soundOn과 항상 동기화되는 사운드 시스템 내부 상태
+  let masterSoundOn = soundOn; // soundOn과 항상 동기화되는 사운드 시스템 내부 상태
   let currentBgmKey = null;
   let currentBgmAudio = null;
   const activeSfxAudios = new Set(); // 재생 중인 효과음들 - 음소거 토글 시 즉시 반영하기 위해 추적
@@ -195,6 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     activeSfxAudios.forEach((audio) => {
       audio.muted = muted;
     });
+    introVideo.muted = muted; // 인트로 영상이 재생 중일 때 토글해도 바로 반영되도록
   }
 
   // 인트로 영상 자체에 음성/음악이 들어있어 game_bgm과 겹쳐 들리지 않도록,
@@ -310,6 +313,18 @@ document.addEventListener("DOMContentLoaded", () => {
     fragment.appendChild(soundBtn);
     return fragment;
   }
+
+  // 시작화면에는 공통 버튼이 없으므로, 국기(언어 전환) 버튼 옆에 사운드 버튼만 따로 둔다.
+  const startSoundBtn = document.createElement("button");
+  startSoundBtn.type = "button";
+  startSoundBtn.className = "start-sound-button";
+  const startSoundImg = document.createElement("img");
+  startSoundImg.src = `asset/image/button_sound_${soundOn ? "on" : "off"}.png`;
+  startSoundImg.alt = "사운드 켜기/끄기";
+  startSoundBtn.appendChild(startSoundImg);
+  soundToggleImages.push(startSoundImg);
+  startSoundBtn.addEventListener("click", toggleSound);
+  startScreen.appendChild(startSoundBtn);
 
   // 시작화면·캐릭터 선택 화면을 제외한 모든 화면에 공통 버튼 3개를 주입한다.
   const COMMON_UI_EXCLUDED_SCREENS = [startScreen, characterScreen, introVideoScreen];
